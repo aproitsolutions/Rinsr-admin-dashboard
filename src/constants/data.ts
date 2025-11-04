@@ -11,12 +11,60 @@ export type Product = {
   updated_at: string;
 };
 
+export type Order = {
+  id: string;
+  // Legacy fields used by earlier UI
+  customer?: string;
+  customer_email?: string;
+  customer_phone?: string;
+  total?: number;
+  status?: 'pending' | 'shipped' | 'cancelled' | 'completed' | string;
+  date?: string;
+  created_at?: string;
+  updated_at?: string;
+  items?: OrderItem[];
+
+  // Fields used by current orders listing UI (from real API)
+  plan_name?: string;
+  name?: string;
+  plan_id_name?: string;
+  address_line?: string;
+  pickup_time_slot?: string;
+};
+
+export type OrderItem = {
+  id: string;
+  product_id: string;
+  product_name: string;
+  quantity: number;
+  price: number;
+  subtotal: number;
+};
+
+export type OrderResponse = {
+  success: boolean;
+  message: string;
+  data?: Order | Order[];
+  total?: number;
+  page?: number;
+  limit?: number;
+  error?: string;
+};
+
 //Info: The following data is used for the sidebar navigation and Cmd K bar.
 export const navItems: NavItem[] = [
   {
     title: 'Dashboard',
     url: '/dashboard/overview',
     icon: 'dashboard',
+    isActive: false,
+    shortcut: ['d', 'd'],
+    items: [] // Empty array as there are no child items for Dashboard
+  },
+  {
+    title: 'Orders',
+    url: '/dashboard/orders',
+    icon: 'order',
     isActive: false,
     shortcut: ['d', 'd'],
     items: [] // Empty array as there are no child items for Dashboard

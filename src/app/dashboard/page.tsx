@@ -1,12 +1,8 @@
-import { auth } from '@clerk/nextjs/server';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 export default async function Dashboard() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return redirect('/auth/sign-in');
-  } else {
-    redirect('/dashboard/overview');
-  }
+  const token = (await cookies()).get('rinsr_token')?.value;
+  if (!token) return redirect('/auth/login');
+  return redirect('/dashboard/overview');
 }

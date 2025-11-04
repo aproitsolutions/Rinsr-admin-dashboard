@@ -36,6 +36,21 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const onLogout = async () => {
+    try {
+      const res = await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      if (!res.ok) {
+        console.error('Logout failed');
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      window.location.replace('/auth/login');
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -98,7 +113,13 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem
+              onClick={onLogout}
+              onSelect={(e) => {
+                e.preventDefault();
+                onLogout();
+              }}
+            >
               <IconLogout className='mr-2 h-4 w-4' />
               Log out
             </DropdownMenuItem>

@@ -1,11 +1,35 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+function isPublic(pathname: string) {
+  return (
+    pathname.startsWith('/auth') ||
+    pathname.startsWith('/api/auth') ||
+    pathname === '/' ||
+    pathname.startsWith('/favicon.ico')
+  );
+}
 
-export default clerkMiddleware(async (auth, req: NextRequest) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+export default async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
+
+  // Allow public routes
+  if (isPublic(pathname)) {
+    return NextResponse.next();
+  }
+
+  // Protect dashboard and other app pages
+  if (pathname.startsWith('/dashboard')) {
+    const token = req.cookies.get('rinsr_token')?.value;
+    if (!token) {
+      const loginUrl = req.nextUrl.clone();
+      loginUrl.pathname = '/auth/login';
+      loginUrl.searchParams.set('from', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
+  return NextResponse.next();
+}
 export const config = {
   matcher: [
     // Skip Next.js internals and all static files, unless found in search params
