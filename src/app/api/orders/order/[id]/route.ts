@@ -8,8 +8,9 @@ import { OrderResponse } from '@/constants/data';
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> } // ✅ Must be Promise
 ) {
+  // ✅ FIX: Await params before accessing it
   const { id: orderId } = await context.params;
   console.log(`🟢 GET /api/orders/order/${orderId}`);
 
@@ -38,10 +39,6 @@ export async function GET(
         Accept: 'application/json'
       }
     });
-
-    console.log('🧩 RINSR_API_BASE:', baseUrl);
-    console.log('🧩 Order ID received:', orderId);
-    console.log('🧩 Token exists:', !!token);
 
     const rawText = await upstreamRes.text();
     let data: any;
@@ -86,7 +83,6 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const orderId = params.id;
-  console.log(`🟢 PUT /api/orders/order/${orderId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -107,7 +103,6 @@ export async function PUT(
     }
 
     const body = await request.json();
-    console.log('📦 Incoming update payload:', JSON.stringify(body, null, 2));
 
     const upstreamRes = await fetch(`${baseUrl}/orders/${orderId}`, {
       method: 'PUT',
@@ -127,8 +122,6 @@ export async function PUT(
       data = { raw: rawText };
     }
 
-    console.log('📤 Upstream response:', JSON.stringify(data, null, 2));
-
     if (!upstreamRes.ok) {
       return NextResponse.json(
         {
@@ -146,7 +139,6 @@ export async function PUT(
       data: data?.order ?? data?.data ?? data
     });
   } catch (err) {
-    console.error('🔥 PUT /api/orders/order/[id] failed:', err);
     return NextResponse.json(
       {
         success: false,
@@ -158,6 +150,94 @@ export async function PUT(
   }
 }
 
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  const orderId = params.id;
+  console.log(`🟢 PATCH /api/orders/order/${orderId}/cancel`);
+
+  try {
+    const baseUrl = process.env.RINSR_API_BASE;
+    const token = (await cookies()).get('rinsr_token')?.value;
+
+    if (!baseUrl) {
+      return NextResponse.json(
+        { success: false, message: 'Missing RINSR_API_BASE' },
+        { status: 500 }
+      );
+    }
+
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized - Missing token' },
+        { status: 401 }
+      );
+    }
+
+    // Ensure base URL includes '/api'
+    const normalizedBase = baseUrl?.endsWith('/api')
+      ? baseUrl
+      : `${baseUrl}/api`;
+
+    // Send the cancel request to the upstream API
+    const upstreamRes = await fetch(
+      `${normalizedBase}/orders/${orderId}/cancel`,
+      {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/json'
+        }
+      }
+    );
+
+    let data: any;
+    try {
+      if (
+        upstreamRes.headers.get('content-type')?.includes('application/json')
+      ) {
+        data = await upstreamRes.json(); // Parse JSON response
+      } else {
+        const rawText = await upstreamRes.text(); // Get raw response text
+        data = { raw: rawText }; // Store raw text for debugging
+      }
+    } catch (err) {
+      console.error('Error parsing upstream response:', err);
+      data = { raw: 'Unable to parse response' };
+    }
+
+    console.log('📤 Upstream response:', JSON.stringify(data, null, 2));
+
+    if (!upstreamRes.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: data?.message || 'Upstream cancel failed',
+          error: data.raw || 'Unknown error'
+        },
+        { status: upstreamRes.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Order canceled successfully',
+      data: data?.order ?? data?.data ?? data
+    });
+  } catch (err) {
+    console.error('🔥 PATCH /api/orders/order/[id]/cancel failed:', err);
+    return NextResponse.json(
+      {
+        success: false,
+        message: 'Server error while canceling order',
+        error: err instanceof Error ? err.message : String(err)
+      },
+      { status: 500 }
+    );
+  }
+}
 /**
  * DELETE /api/orders/[orderId]
  * Delete an order

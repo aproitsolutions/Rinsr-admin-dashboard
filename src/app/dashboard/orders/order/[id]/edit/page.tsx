@@ -64,17 +64,29 @@ export default function EditOrderPage() {
 
         if (data.success) {
           const order = data.data || data.order || {};
-
-          // ✅ Defensive defaults to prevent wrong mapping
           const pickup_address = order.pickup_address || {};
           const pickup_time_slot = order.pickup_time_slot || {};
+
+          // ✅ Helper to convert "08:00 PM" → "20:00"
+          const convertTo24Hr = (time12h: string) => {
+            if (!time12h) return '';
+            const [time, modifier] = time12h.split(' ');
+            let [hours, minutes] = time.split(':').map(Number);
+
+            if (modifier === 'PM' && hours < 12) hours += 12;
+            if (modifier === 'AM' && hours === 12) hours = 0;
+
+            return `${hours.toString().padStart(2, '0')}:${minutes
+              .toString()
+              .padStart(2, '0')}`;
+          };
 
           form.reset({
             pickup_date: order.pickup_date
               ? order.pickup_date.split('T')[0]
               : '',
-            pickup_time_slot_start: pickup_time_slot.start || '',
-            pickup_time_slot_end: pickup_time_slot.end || '',
+            pickup_time_slot_start: convertTo24Hr(pickup_time_slot.start),
+            pickup_time_slot_end: convertTo24Hr(pickup_time_slot.end),
             address_label: pickup_address.label || 'Home',
             address_line: pickup_address.address_line || '',
             heavy_items: order.heavy_items || '',
@@ -85,7 +97,7 @@ export default function EditOrderPage() {
           setAlertOpen(true);
         }
       } catch (err) {
-        console.error('Error loading order:', err);
+        // console.error('Error loading order:', err);
         setAlertMessage('Error loading order.');
         setAlertOpen(true);
       } finally {
@@ -276,6 +288,7 @@ export default function EditOrderPage() {
             <Button type='submit' disabled={saving}>
               {saving ? 'Saving...' : 'Save Changes'}
             </Button>
+
             <Button
               variant='outline'
               onClick={() => router.push('/dashboard/orders')}

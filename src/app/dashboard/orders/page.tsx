@@ -84,8 +84,29 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     Math.ceil((filteredOrders.length || 0) / perPage)
   );
 
+  // Cancel order function
+  const handleCancelOrder = async (orderId: string) => {
+    try {
+      const response = await fetch(`/api/orders/order/${orderId}/cancel`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        // Update state to remove the canceled order or refresh the list
+        setOrders(orders.filter((order) => order.id !== orderId));
+      } else {
+        alert('Failed to cancel the order');
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      alert('Something went wrong. Please try again.');
+    }
+  };
+
   return (
-    <PageContainer scrollable={false}>
+    <PageContainer scrollable={true}>
       <div className='flex flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
         <div className='flex w-full items-center justify-between gap-2'>
@@ -167,6 +188,15 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                           Edit
                         </Button>
                       </Link>
+                      {/* Cancel Button */}
+                      <Button
+                        variant='destructive'
+                        size='sm'
+                        onClick={() => handleCancelOrder(order.id)}
+                        className='ml-2'
+                      >
+                        Cancel
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))
