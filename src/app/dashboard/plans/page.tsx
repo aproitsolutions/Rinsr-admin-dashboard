@@ -14,9 +14,19 @@ import {
   TableRow,
   TableCell
 } from '@/components/ui/table';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { IconPlus } from '@tabler/icons-react';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction
+} from '@/components/ui/alert-dialog';
 
 interface PlanService {
   serviceId: string;
@@ -47,7 +57,11 @@ export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [alertOpen, setAlertOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
+  // 🧠 Fetch all plans
   useEffect(() => {
     async function fetchPlans() {
       setLoading(true);
@@ -60,7 +74,8 @@ export default function PlansPage() {
         } else {
           setPlans([]);
         }
-      } catch {
+      } catch (err) {
+        console.error('Error fetching plans:', err);
         setPlans([]);
       } finally {
         setLoading(false);
@@ -70,6 +85,33 @@ export default function PlansPage() {
     fetchPlans();
   }, []);
 
+  // 🗑️ Delete plan (calls your API -> external RINSR -> DB)
+  async function handleDelete(id: string) {
+    setDeleting(true);
+    try {
+      const res = await fetch(`/api/plans/${id}`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      const data = await res.json();
+
+      if (res.ok && data.success) {
+        // Remove deleted plan from table immediately
+        setPlans((prev) => prev.filter((p) => p._id !== id));
+      } else {
+        console.error('Delete failed:', data.message || 'Unknown error');
+      }
+    } catch (err) {
+      console.error('Error deleting plan:', err);
+    } finally {
+      setDeleting(false);
+      setAlertOpen(false);
+      setSelectedId(null);
+    }
+  }
+
+  // 🔍 Filter
   const filteredPlans = useMemo(() => {
     if (!search.trim()) return plans;
     return plans.filter(
@@ -84,13 +126,13 @@ export default function PlansPage() {
       <div className='flex flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
         <div className='flex w-full items-center justify-between gap-2'>
-          <h1 className='text-2xl font-bold'>Plans</h1>
+          <h1 className='text-foreground text-2xl font-bold'>Plans</h1>
           <div className='flex items-center gap-2'>
             <Input
               placeholder='Search plans...'
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className='max-w-xs'
+              className='bg-card text-foreground border-input focus:ring-ring max-w-xs'
             />
             <Link
               href='/dashboard/plans/new'
@@ -102,9 +144,9 @@ export default function PlansPage() {
         </div>
 
         {/* Table */}
-        <div className='overflow-x-auto rounded-lg border bg-white shadow-sm'>
+        <div className='border-border bg-card text-foreground overflow-x-auto rounded-lg border shadow-sm transition-colors'>
           <Table className='w-full border-collapse'>
-            <TableHeader className='bg-muted sticky top-0 z-10'>
+            <TableHeader className='bg-muted/70 sticky top-0 z-10'>
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
@@ -112,6 +154,7 @@ export default function PlansPage() {
                 <TableHead>Duration (Days)</TableHead>
                 <TableHead>Weight Limit (kg)</TableHead>
                 <TableHead>Pickups / Month</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className='pr-6 text-right'>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -122,7 +165,7 @@ export default function PlansPage() {
                   <TableRow key={i}>
                     {Array.from({ length: 7 }).map((_, j) => (
                       <TableCell key={j}>
-                        <Skeleton className='h-5 w-full' />
+                        <Skeleton className='bg-muted/50 h-5 w-full' />
                       </TableCell>
                     ))}
                   </TableRow>
@@ -131,7 +174,10 @@ export default function PlansPage() {
                 filteredPlans.map((plan, idx) => (
                   <TableRow
                     key={plan._id}
-                    className={idx % 2 ? 'bg-gray-50' : ''}
+                    className={cn(
+                      'hover:bg-accent hover:text-accent-foreground transition-colors',
+                      idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'
+                    )}
                   >
                     <TableCell className='font-medium'>{plan.name}</TableCell>
                     <TableCell>{plan.description || '—'}</TableCell>
@@ -139,13 +185,47 @@ export default function PlansPage() {
                     <TableCell>{plan.validity_days ?? '—'}</TableCell>
                     <TableCell>{plan.weight_limit_kg ?? '—'}</TableCell>
                     <TableCell>{plan.pickups_per_month ?? '—'}</TableCell>
+                    <TableCell>
+                      {plan.is_active === true
+                        ? 'Active'
+                        : plan.is_active === false
+                          ? 'Inactive'
+                          : '—'}
+                    </TableCell>
+
+                    {/* ✅ Actions Column */}
                     <TableCell className='pr-6 text-right'>
-                      <Link href={`/dashboard/plans/${plan._id}/edit`}>
-                        <Button variant='outline' size='sm'>
-                          <Pencil className='mr-2 h-4 w-4' />
-                          Edit
+                      <div className='flex items-center justify-end gap-2'>
+                        <Link href={`/dashboard/plans/${plan._id}/edit`}>
+                          <Button
+                            variant='outline'
+                            size='sm'
+                            className='hover:bg-accent hover:text-accent-foreground'
+                          >
+                            <Pencil className='mr-2 h-4 w-4' />
+                            Edit
+                          </Button>
+                        </Link>
+
+                        <Button
+                          variant={plan.is_active ? 'destructive' : 'outline'}
+                          size='sm'
+                          disabled={plan.is_active === false}
+                          onClick={() => {
+                            if (plan.is_active) {
+                              setSelectedId(plan._id);
+                              setAlertOpen(true);
+                            }
+                          }}
+                        >
+                          <Trash2 className='mr-2 h-4 w-4' />
+                          {plan.is_active === true
+                            ? 'Disable'
+                            : plan.is_active === false
+                              ? 'Inactive'
+                              : '—'}
                         </Button>
-                      </Link>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -163,6 +243,29 @@ export default function PlansPage() {
           </Table>
         </div>
       </div>
+
+      {/* 🧩 Delete Confirmation */}
+      <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Plan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove this plan from the database. This
+              action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleting}
+              className='bg-destructive text-destructive-foreground hover:bg-destructive/90'
+              onClick={() => selectedId && handleDelete(selectedId)}
+            >
+              {deleting ? 'Deleting...' : 'Delete'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </PageContainer>
   );
 }

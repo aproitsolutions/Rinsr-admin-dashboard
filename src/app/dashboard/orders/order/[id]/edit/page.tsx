@@ -2,10 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import PageContainer from '@/components/layout/page-container';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectTrigger,
@@ -22,6 +21,15 @@ import {
   AlertDialogDescription,
   AlertDialogAction
 } from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormControl,
+  FormMessage
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 
 export default function EditOrderPage() {
   const router = useRouter();
@@ -34,17 +42,44 @@ export default function EditOrderPage() {
   const [alertMessage, setAlertMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
 
-  const [order, setOrder] = useState<any>(null);
+  const form = useForm({
+    defaultValues: {
+      pickup_date: '',
+      pickup_time_slot_start: '',
+      pickup_time_slot_end: '',
+      address_label: '', // ✅ added
+      address_line: '', // ✅ added
+      heavy_items: '',
+      status: ''
+    }
+  });
 
-  // Fetch order details
+  // ✅ Fetch order details
+
   useEffect(() => {
     async function fetchOrder() {
       try {
         const res = await fetch(`/api/orders/order/${orderId}`);
         const data = await res.json();
-        console.log('➡️ Order data:', JSON.stringify(data, null, 2));
+
         if (data.success) {
-          setOrder(data.data || data.order);
+          const order = data.data || data.order || {};
+
+          // ✅ Defensive defaults to prevent wrong mapping
+          const pickup_address = order.pickup_address || {};
+          const pickup_time_slot = order.pickup_time_slot || {};
+
+          form.reset({
+            pickup_date: order.pickup_date
+              ? order.pickup_date.split('T')[0]
+              : '',
+            pickup_time_slot_start: pickup_time_slot.start || '',
+            pickup_time_slot_end: pickup_time_slot.end || '',
+            address_label: pickup_address.label || 'Home',
+            address_line: pickup_address.address_line || '',
+            heavy_items: order.heavy_items || '',
+            status: order.status || 'scheduled'
+          });
         } else {
           setAlertMessage('Failed to load order.');
           setAlertOpen(true);
@@ -59,18 +94,32 @@ export default function EditOrderPage() {
     }
 
     fetchOrder();
-  }, [orderId]);
+  }, [orderId, form]);
 
-  async function handleSave() {
-    if (!order) return;
+  // ✅ Handle Save
+  async function onSubmit(values: any) {
     setSaving(true);
-
     try {
+      const payload = {
+        pickup_date: values.pickup_date,
+        pickup_time_slot: {
+          start: values.pickup_time_slot_start,
+          end: values.pickup_time_slot_end
+        },
+        pickup_address: {
+          label: values.address_label || 'Home', // ✅ new field added
+          address_line: values.address_line
+        },
+        heavy_items: values.heavy_items,
+        status: values.status
+      };
+
       const res = await fetch(`/api/orders/order/${orderId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(order)
+        body: JSON.stringify(payload)
       });
+
       const data = await res.json();
 
       if (data.success) {
@@ -93,135 +142,148 @@ export default function EditOrderPage() {
   if (loading) {
     return (
       <PageContainer>
-        <p className='p-6 text-gray-500'>Loading order...</p>
-      </PageContainer>
-    );
-  }
-
-  if (!order) {
-    return (
-      <PageContainer>
-        <p className='p-6 text-red-500'>Order not found.</p>
+        <p className='text-muted-foreground p-6'>Loading order...</p>
       </PageContainer>
     );
   }
 
   return (
     <PageContainer scrollable={false}>
-      <div className='flex max-w-3xl flex-1 flex-col space-y-4 p-6'>
-        <h1 className='text-2xl font-bold'>Edit Order</h1>
+      <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
+        <h1 className='text-foreground text-2xl font-bold'>Edit Order</h1>
 
-        {/* Pickup Date */}
-        <div className='space-y-2'>
-          <Label htmlFor='pickup_date'>Pickup Date</Label>
-          <Input
-            id='pickup_date'
-            type='date'
-            value={order.pickup_date?.split('T')[0] || ''}
-            onChange={(e) =>
-              setOrder({ ...order, pickup_date: e.target.value })
-            }
-          />
-        </div>
+        <Form form={form} onSubmit={form.handleSubmit(onSubmit)}>
+          <div className='grid gap-4'>
+            {/* Pickup Date */}
+            <FormField
+              control={form.control}
+              name='pickup_date'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pickup Date</FormLabel>
+                  <FormControl>
+                    <Input type='date' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-        {/* Pickup Time Slot */}
-        <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
-          <div className='space-y-2'>
-            <Label>Start Time</Label>
-            <Input
-              type='time'
-              value={order.pickup_time_slot?.start || ''}
-              onChange={(e) =>
-                setOrder({
-                  ...order,
-                  pickup_time_slot: {
-                    ...order.pickup_time_slot,
-                    start: e.target.value
-                  }
-                })
-              }
+            {/* Pickup Time Slot */}
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+              <FormField
+                control={form.control}
+                name='pickup_time_slot_start'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Start Time</FormLabel>
+                    <FormControl>
+                      <Input type='time' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='pickup_time_slot_end'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>End Time</FormLabel>
+                    <FormControl>
+                      <Input type='time' {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            {/* ✅ Address Label */}
+            <FormField
+              control={form.control}
+              name='address_label'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Label</FormLabel>
+                  <FormControl>
+                    <Input placeholder='Home / Office / Other' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* ✅ Address Line */}
+            <FormField
+              control={form.control}
+              name='address_line'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Address Line</FormLabel>
+                  <FormControl>
+                    <Input placeholder='123 Main Street' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Heavy Items */}
+            <FormField
+              control={form.control}
+              name='heavy_items'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Heavy Items</FormLabel>
+                  <FormControl>
+                    <Input placeholder='e.g. Bedsheets, Curtains' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Status */}
+            <FormField
+              control={form.control}
+              name='status'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Order Status</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select status' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value='scheduled'>Scheduled</SelectItem>
+                      <SelectItem value='in-progress'>In Progress</SelectItem>
+                      <SelectItem value='completed'>Completed</SelectItem>
+                      <SelectItem value='cancelled'>Cancelled</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
           </div>
 
-          <div className='space-y-2'>
-            <Label>End Time</Label>
-            <Input
-              type='time'
-              value={order.pickup_time_slot?.end || ''}
-              onChange={(e) =>
-                setOrder({
-                  ...order,
-                  pickup_time_slot: {
-                    ...order.pickup_time_slot,
-                    end: e.target.value
-                  }
-                })
-              }
-            />
+          {/* Buttons */}
+          <div className='flex gap-4 pt-6'>
+            <Button type='submit' disabled={saving}>
+              {saving ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button
+              variant='outline'
+              onClick={() => router.push('/dashboard/orders')}
+            >
+              Cancel
+            </Button>
           </div>
-        </div>
-
-        {/* Address */}
-        <div className='space-y-2'>
-          <Label htmlFor='address_line'>Address Line</Label>
-          <Input
-            id='address_line'
-            value={order.pickup_address?.address_line || ''}
-            onChange={(e) =>
-              setOrder({
-                ...order,
-                pickup_address: {
-                  ...order.pickup_address,
-                  address_line: e.target.value
-                }
-              })
-            }
-          />
-        </div>
-
-        {/* Heavy Items */}
-        <div className='space-y-2'>
-          <Label htmlFor='heavy_items'>Heavy Items</Label>
-          <Input
-            id='heavy_items'
-            value={order.heavy_items || ''}
-            onChange={(e) =>
-              setOrder({ ...order, heavy_items: e.target.value })
-            }
-          />
-        </div>
-
-        {/* Status */}
-        <div className='space-y-2'>
-          <Label htmlFor='status'>Order Status</Label>
-          <Select
-            value={order.status}
-            onValueChange={(value) => setOrder({ ...order, status: value })}
-          >
-            <SelectTrigger className='w-full'>
-              <SelectValue placeholder='Select status' />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value='scheduled'>Scheduled</SelectItem>
-              <SelectItem value='in-progress'>In Progress</SelectItem>
-              <SelectItem value='completed'>Completed</SelectItem>
-              <SelectItem value='cancelled'>Cancelled</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        {/* Save Button */}
-        <div className='flex gap-4 pt-4'>
-          <Button onClick={handleSave} disabled={saving}>
-            {saving ? 'Saving...' : 'Save Changes'}
-          </Button>
-          <Button
-            variant='outline'
-            onClick={() => router.push('/dashboard/orders')}
-          >
-            Cancel
-          </Button>
-        </div>
+        </Form>
       </div>
 
       {/* ✅ Alert Dialog */}

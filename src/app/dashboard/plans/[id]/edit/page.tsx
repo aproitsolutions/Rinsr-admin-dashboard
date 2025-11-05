@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -35,6 +35,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 
+// ✅ Reuse the same schema
 const planSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().optional(),
@@ -57,8 +58,11 @@ const planSchema = z.object({
 
 type PlanFormData = z.infer<typeof planSchema>;
 
-export default function CreatePlanPage() {
+export default function EditPlanPage() {
   const router = useRouter();
+  const params = useParams();
+  const planId = params?.id as string;
+
   const [services, setServices] = useState<{ _id: string; name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState<{
@@ -84,7 +88,45 @@ export default function CreatePlanPage() {
     }
   });
 
-  // 🧠 Fetch available services
+  // 🧩 Fetch plan details
+  useEffect(() => {
+    async function fetchPlan() {
+      try {
+        const res = await fetch(`/api/plans/${planId}`);
+        const data = await res.json();
+
+        if (data.success && data.plan) {
+          const plan = data.plan;
+          form.reset({
+            name: plan.name,
+            description: plan.description || '',
+            price: plan.price,
+            currency: plan.currency || 'INR',
+            validity_days: plan.validity_days,
+            weight_limit_kg: plan.weight_limit_kg,
+            pickups_per_month: plan.pickups_per_month,
+            features: plan.features || [],
+            services:
+              plan.services?.map((s: any) => ({
+                serviceId: s.serviceId || s._id,
+                name: s.name
+              })) || [],
+            extra_kg_rate: plan.extra_kg_rate,
+            rollover_limit_months: plan.rollover_limit_months,
+            is_active: plan.is_active
+          });
+        } else {
+          setAlert({ message: 'Plan not found.', success: false });
+        }
+      } catch (err) {
+        console.error('Error fetching plan:', err);
+        setAlert({ message: 'Error loading plan data.', success: false });
+      }
+    }
+    fetchPlan();
+  }, [planId, form]);
+
+  // 🧠 Fetch services for checkbox list
   useEffect(() => {
     async function fetchServices() {
       try {
@@ -92,8 +134,6 @@ export default function CreatePlanPage() {
         const data = await res.json();
         if (data.success && Array.isArray(data.services)) {
           setServices(data.services);
-        } else {
-          console.error('Invalid services response');
         }
       } catch (err) {
         console.error('Failed to fetch services:', err);
@@ -106,10 +146,9 @@ export default function CreatePlanPage() {
   async function onSubmit(values: PlanFormData) {
     setLoading(true);
     setAlert(null);
-
     try {
-      const response = await fetch('/api/plans', {
-        method: 'POST',
+      const response = await fetch(`/api/plans/${planId}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(values)
       });
@@ -117,18 +156,18 @@ export default function CreatePlanPage() {
       const data = await response.json();
 
       if (data.success) {
-        setAlert({ message: 'Plan created successfully!', success: true });
+        setAlert({ message: 'Plan updated successfully!', success: true });
         setTimeout(() => router.push('/dashboard/plans'), 1500);
       } else {
         setAlert({
-          message: data.message || 'Failed to create plan.',
+          message: data.message || 'Failed to update plan.',
           success: false
         });
       }
     } catch (err) {
       console.error(err);
       setAlert({
-        message: 'Something went wrong while saving.',
+        message: 'Something went wrong while updating.',
         success: false
       });
     } finally {
@@ -140,7 +179,7 @@ export default function CreatePlanPage() {
     <div className='max-h-screen overflow-y-auto p-6 pb-20'>
       <Card className='mx-auto mt-6 max-w-3xl'>
         <CardHeader>
-          <CardTitle>Create New Plan</CardTitle>
+          <CardTitle>Edit Plan</CardTitle>
         </CardHeader>
         <CardContent>
           <Form
@@ -177,7 +216,7 @@ export default function CreatePlanPage() {
               )}
             />
 
-            {/* Features (Dynamic list) */}
+            {/* Features */}
             <FormField
               control={form.control}
               name='features'
@@ -191,20 +230,18 @@ export default function CreatePlanPage() {
                           <Input
                             value={feature}
                             onChange={(e) => {
-                              const newFeatures = [...(field.value || [])];
-                              newFeatures[index] = e.target.value;
-                              field.onChange(newFeatures);
+                              const updated = [...(field.value || [])];
+                              updated[index] = e.target.value;
+                              field.onChange(updated);
                             }}
-                            placeholder={`Feature ${index + 1}`}
                           />
                           <Button
                             type='button'
                             variant='outline'
                             onClick={() => {
-                              const newFeatures = field.value?.filter(
-                                (_, i) => i !== index
+                              field.onChange(
+                                field.value?.filter((_, i) => i !== index)
                               );
-                              field.onChange(newFeatures);
                             }}
                           >
                             Remove
@@ -229,7 +266,8 @@ export default function CreatePlanPage() {
                 </FormItem>
               )}
             />
-            {/* Price and Currency */}
+
+            {/* Price / Currency */}
             <div className='grid grid-cols-2 gap-4'>
               <FormField
                 control={form.control}
@@ -244,7 +282,6 @@ export default function CreatePlanPage() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
                 name='currency'
@@ -270,49 +307,7 @@ export default function CreatePlanPage() {
               />
             </div>
 
-            {/* Duration, Weight Limit, Pickups */}
-            <div className='grid grid-cols-3 gap-4'>
-              <FormField
-                control={form.control}
-                name='validity_days'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Validity (Days)</FormLabel>
-                    <FormControl>
-                      <Input type='number' {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='weight_limit_kg'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Weight Limit (kg)</FormLabel>
-                    <FormControl>
-                      <Input type='number' {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name='pickups_per_month'
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Pickups per Month</FormLabel>
-                    <FormControl>
-                      <Input type='number' {...field} />
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
-            </div>
-
-            {/* Services (Multi-select with checkboxes) */}
+            {/* Services */}
             <div className='space-y-2'>
               <Label>Services Included</Label>
               <div className='grid grid-cols-2 gap-3'>
@@ -349,55 +344,53 @@ export default function CreatePlanPage() {
               </div>
             </div>
 
-            {/* Extra KG Rate */}
-            <FormField
-              control={form.control}
-              name='extra_kg_rate'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Extra KG Rate (₹)</FormLabel>
-                  <FormControl>
-                    <Input type='number' {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-
-            {/* Rollover and Active */}
+            {/* Extra / Rollover / Active */}
             <div className='grid grid-cols-2 gap-4'>
               <FormField
                 control={form.control}
-                name='rollover_limit_months'
+                name='extra_kg_rate'
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Rollover Limit (Months)</FormLabel>
+                    <FormLabel>Extra KG Rate (₹)</FormLabel>
                     <FormControl>
                       <Input type='number' {...field} />
                     </FormControl>
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={form.control}
-                name='is_active'
+                name='rollover_limit_months'
                 render={({ field }) => (
-                  <FormItem className='flex items-center justify-between rounded-md border p-3'>
-                    <FormLabel>Active</FormLabel>
+                  <FormItem>
+                    <FormLabel>Rollover (Months)</FormLabel>
                     <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
+                      <Input type='number' {...field} />
                     </FormControl>
                   </FormItem>
                 )}
               />
             </div>
 
+            <FormField
+              control={form.control}
+              name='is_active'
+              render={({ field }) => (
+                <FormItem className='flex items-center justify-between rounded-md border p-3'>
+                  <FormLabel>Active</FormLabel>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
             <div className='flex justify-end gap-3'>
               <Button type='submit' disabled={loading}>
-                {loading ? 'Saving...' : 'Create Plan'}
+                {loading ? 'Saving...' : 'Update Plan'}
               </Button>
               <Link href='/dashboard/plans'>
                 <Button variant='outline'>Cancel</Button>
@@ -415,8 +408,6 @@ export default function CreatePlanPage() {
             <AlertDialogDescription className='pb-4'>
               {alert?.message}
             </AlertDialogDescription>
-
-            {/* Footer Section with Button */}
             <div className='flex justify-end'>
               <Button variant='outline' onClick={() => setAlert(null)}>
                 Close

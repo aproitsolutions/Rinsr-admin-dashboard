@@ -23,6 +23,7 @@ import {
 import { getOrders } from '@/lib/api/orders';
 import { Order } from '@/constants/data';
 import { Pencil } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OrdersPageProps {
   className?: string;
@@ -64,7 +65,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     fetchOrders();
   }, [search, pageIndex, perPage]);
 
-  // Search filter
+  // Filter logic
   const filteredOrders = useMemo(() => {
     if (!search.trim()) return orders;
     return orders.filter(
@@ -85,177 +86,179 @@ export default function OrdersPage({ className }: OrdersPageProps) {
 
   return (
     <PageContainer scrollable={false}>
-      <div className='flex flex-1 flex-col space-y-4'>
+      <div className='flex flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
-        <div className='flex w-full items-center justify-between gap-2 p-3'>
+        <div className='flex w-full items-center justify-between gap-2'>
+          <h1 className='text-foreground text-2xl font-bold'>Orders</h1>
           <input
             type='text'
             placeholder='Search orders...'
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className='focus:ring-primary w-60 rounded-md border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:outline-none'
+            className='border-input bg-card text-foreground focus:ring-ring max-w-xs rounded-md border px-3 py-2 text-sm shadow-sm transition-colors focus:ring-2 focus:outline-none'
           />
         </div>
 
-        {/* Table + Pagination */}
-        <div className='flex flex-1 flex-col rounded-lg border bg-white'>
-          <div
-            className={`relative flex-1 ${
-              perPage > 20
-                ? 'max-h-[500px] overflow-y-auto'
-                : 'overflow-visible'
-            }`}
-          >
-            <div className='flex h-full flex-1 flex-col rounded-lg border bg-white'>
-              <Table className='w-full border-collapse'>
-                <TableHeader className='bg-muted sticky top-0 z-10'>
-                  <TableRow>
-                    <TableHead>Plan Name</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Address</TableHead>
-                    <TableHead>Pickup Slot</TableHead>
-                    <TableHead className='text-right'>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
+        {/* Table */}
+        <div className='border-border bg-card text-foreground overflow-x-auto rounded-lg border shadow-sm'>
+          <Table className='w-full border-collapse'>
+            <TableHeader className='bg-muted/70 sticky top-0 z-10'>
+              <TableRow>
+                <TableHead className='text-foreground/80'>Plan Name</TableHead>
+                <TableHead className='text-foreground/80'>Name</TableHead>
+                <TableHead className='text-foreground/80'>Plan</TableHead>
+                <TableHead className='text-foreground/80'>Address</TableHead>
+                <TableHead className='text-foreground/80'>
+                  Pickup Slot
+                </TableHead>
+                <TableHead className='text-foreground/80 pr-6 text-right'>
+                  Actions
+                </TableHead>
+              </TableRow>
+            </TableHeader>
 
-                <TableBody>
-                  {loading ? (
-                    Array.from({ length: perPage }).map((_, i) => (
-                      <TableRow key={i}>
-                        {Array.from({ length: 6 }).map((_, j) => (
-                          <TableCell key={j}>
-                            <Skeleton className='h-6 w-full' />
-                          </TableCell>
-                        ))}
-                      </TableRow>
-                    ))
-                  ) : displayedOrders.length > 0 ? (
-                    displayedOrders.map((order, idx) => (
-                      <TableRow
-                        key={order.id ?? idx}
-                        className={idx % 2 ? 'bg-gray-50' : ''}
-                      >
-                        <TableCell className='font-medium'>
-                          {order.plan_name || '—'}
-                        </TableCell>
-
-                        {/* ✅ Display Admin if user_id is null */}
-                        <TableCell>
-                          {order.name && order.name !== 'N/A'
-                            ? order.name
-                            : 'Admin'}
-                        </TableCell>
-
-                        <TableCell>{order.plan_id_name || '—'}</TableCell>
-                        <TableCell>{order.address_line || '—'}</TableCell>
-                        <TableCell>{order.pickup_time_slot || '—'}</TableCell>
-
-                        {/* ✅ New Actions column */}
-                        <TableCell className='text-right'>
-                          <Link
-                            href={`/dashboard/orders/order/${order.id}/edit`}
-                          >
-                            <Button
-                              variant='outline'
-                              size='sm'
-                              className='flex items-center gap-2'
-                            >
-                              <Pencil className='h-4 w-4' />
-                              Edit
-                            </Button>
-                          </Link>
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell
-                        colSpan={6}
-                        className='text-muted-foreground py-10 text-center text-sm'
-                      >
-                        No results found.
+            <TableBody>
+              {loading ? (
+                Array.from({ length: perPage }).map((_, i) => (
+                  <TableRow key={i}>
+                    {Array.from({ length: 6 }).map((_, j) => (
+                      <TableCell key={j}>
+                        <Skeleton className='bg-muted/40 h-6 w-full' />
                       </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </div>
+                    ))}
+                  </TableRow>
+                ))
+              ) : displayedOrders.length > 0 ? (
+                displayedOrders.map((order, idx) => (
+                  <TableRow
+                    key={order.id ?? idx}
+                    className={cn(
+                      'hover:bg-accent hover:text-accent-foreground transition-colors',
+                      idx % 2 === 0 ? 'bg-background' : 'bg-muted/30'
+                    )}
+                  >
+                    <TableCell className='font-medium'>
+                      {order.plan_name || '—'}
+                    </TableCell>
 
-          {/* Pagination */}
-          <div className='border-t bg-white p-2 sm:p-3'>
-            <div className='flex w-full items-center justify-between gap-4 sm:gap-8'>
-              <div className='text-muted-foreground flex-1 text-sm whitespace-nowrap'>
-                {filteredOrders.length} total orders found.
+                    {/* ✅ Admin fallback */}
+                    <TableCell>
+                      {order.name && order.name !== 'N/A'
+                        ? order.name
+                        : 'Admin'}
+                    </TableCell>
+
+                    <TableCell>{order.plan_id_name || '—'}</TableCell>
+                    <TableCell>{order.address_line || '—'}</TableCell>
+                    <TableCell>
+                      {typeof order.pickup_time_slot === 'string'
+                        ? order.pickup_time_slot
+                        : '—'}
+                    </TableCell>
+
+                    <TableCell className='pr-6 text-right'>
+                      <Link href={`/dashboard/orders/order/${order.id}/edit`}>
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='hover:bg-accent hover:text-accent-foreground'
+                        >
+                          <Pencil className='mr-2 h-4 w-4' />
+                          Edit
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={6}
+                    className='text-muted-foreground py-10 text-center text-sm'
+                  >
+                    No results found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+
+        {/* Pagination */}
+        <div className='border-border bg-card text-foreground border-t p-3'>
+          <div className='flex w-full flex-wrap items-center justify-between gap-4 sm:gap-8'>
+            <div className='text-muted-foreground text-sm'>
+              {filteredOrders.length} total orders found.
+            </div>
+
+            <div className='flex items-center gap-4 sm:gap-6 lg:gap-8'>
+              <div className='flex items-center space-x-2'>
+                <p className='text-sm font-medium whitespace-nowrap'>
+                  Rows per page
+                </p>
+                <Select
+                  value={`${perPage}`}
+                  onValueChange={(value) => {
+                    setPageIndex(1);
+                    setPerPage(Number(value));
+                  }}
+                >
+                  <SelectTrigger className='border-input bg-background text-foreground h-8 w-[4.5rem] border'>
+                    <SelectValue placeholder={perPage} />
+                  </SelectTrigger>
+                  <SelectContent side='top' className='bg-card text-foreground'>
+                    {[10, 20, 30, 40, 50].map((n) => (
+                      <SelectItem key={n} value={`${n}`}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <div className='flex items-center gap-4 sm:gap-6 lg:gap-8'>
-                <div className='flex items-center space-x-2'>
-                  <p className='text-sm font-medium whitespace-nowrap'>
-                    Rows per page
-                  </p>
-                  <Select
-                    value={`${perPage}`}
-                    onValueChange={(value) => {
-                      setPageIndex(1);
-                      setPerPage(Number(value));
-                    }}
-                  >
-                    <SelectTrigger className='h-8 w-[4.5rem]'>
-                      <SelectValue placeholder={perPage} />
-                    </SelectTrigger>
-                    <SelectContent side='top'>
-                      {[10, 20, 30, 40, 50].map((n) => (
-                        <SelectItem key={n} value={`${n}`}>
-                          {n}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className='flex items-center justify-center text-sm font-medium'>
-                  Page {pageIndex} of {pageCount}
-                </div>
-                <div className='flex items-center space-x-2'>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => setPageIndex(1)}
-                    disabled={pageIndex <= 1}
-                    className='hidden size-8 lg:flex'
-                  >
-                    «
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
-                    disabled={pageIndex <= 1}
-                    className='size-8'
-                  >
-                    ‹
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() =>
-                      setPageIndex((p) => Math.min(pageCount, p + 1))
-                    }
-                    disabled={pageIndex >= pageCount}
-                    className='size-8'
-                  >
-                    ›
-                  </Button>
-                  <Button
-                    variant='outline'
-                    size='icon'
-                    onClick={() => setPageIndex(pageCount)}
-                    disabled={pageIndex >= pageCount}
-                    className='hidden size-8 lg:flex'
-                  >
-                    »
-                  </Button>
-                </div>
+
+              <div className='text-sm font-medium'>
+                Page {pageIndex} of {pageCount}
+              </div>
+
+              <div className='flex items-center space-x-2'>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex(1)}
+                  disabled={pageIndex <= 1}
+                  className='hidden size-8 lg:flex'
+                >
+                  «
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
+                  disabled={pageIndex <= 1}
+                  className='size-8'
+                >
+                  ‹
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() =>
+                    setPageIndex((p) => Math.min(pageCount, p + 1))
+                  }
+                  disabled={pageIndex >= pageCount}
+                  className='size-8'
+                >
+                  ›
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex(pageCount)}
+                  disabled={pageIndex >= pageCount}
+                  className='hidden size-8 lg:flex'
+                >
+                  »
+                </Button>
               </div>
             </div>
           </div>
