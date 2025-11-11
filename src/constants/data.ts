@@ -104,7 +104,7 @@ export const navItems: NavItem[] = [
   {
     title: 'Services',
     url: '/dashboard/services',
-    icon: 'settings',
+    icon: 'check',
     shortcut: ['p', 'p'],
     isActive: false,
     items: [] // No child items

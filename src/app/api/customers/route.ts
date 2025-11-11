@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log(' Subscriptions report fetched successfully', data);
+    // console.log(' Subscriptions report fetched successfully', data);
     return NextResponse.json(
       {
         success: true,
