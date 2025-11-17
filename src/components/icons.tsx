@@ -33,8 +33,11 @@ import {
   IconBrandGithub,
   IconShoppingCart,
   IconBriefcase,
-  IconUsers
+  IconUsers,
+  IconBrandDocker,
+  IconWash
 } from '@tabler/icons-react';
+import { ArrowDown } from 'lucide-react';
 
 export type Icon = React.ComponentType<IconProps>;
 
@@ -72,5 +75,8 @@ export const Icons = {
   check: IconCheck,
   order: IconShoppingCart,
   admin: IconBriefcase,
-  users: IconUsers
+  users: IconUsers,
+  hub: IconBrandDocker,
+  service: IconWash,
+  cheverondown: ArrowDown
 };

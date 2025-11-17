@@ -4,6 +4,9 @@ const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
   'https://rinsrapi.aproitsolutions.in/api';
 
+/* ============================================================
+   GET VENDOR DETAILS
+============================================================ */
 export async function GET(
   req: Request,
   context: { params: Promise<{ id: string }> }
@@ -15,17 +18,17 @@ export async function GET(
 
   try {
     const res = await fetch(finalUrl, { method: 'GET', cache: 'no-store' });
-    const text = await res.text(); // read body only once
+    const text = await res.text();
 
     let data;
     try {
-      data = JSON.parse(text); // try parsing as JSON
+      data = JSON.parse(text);
     } catch {
-      console.error('❌ Non-JSON response (HTML likely):', text.slice(0, 200));
+      console.error('❌ Non-JSON response:', text.slice(0, 200));
       return NextResponse.json(
         {
           success: false,
-          message: 'Backend returned non-JSON response (likely HTML error)',
+          message: 'Backend returned non-JSON response',
           raw: text.slice(0, 200)
         },
         { status: 502 }
@@ -33,7 +36,7 @@ export async function GET(
     }
 
     if (!res.ok) {
-      console.error('❌ Upstream error (vendor details):', data);
+      console.error('❌ Vendor fetch failed:', data);
       return NextResponse.json(
         { success: false, message: 'Vendor fetch failed', data },
         { status: res.status }
@@ -48,6 +51,119 @@ export async function GET(
     console.error('❌ Vendor fetch error:', err);
     return NextResponse.json(
       { success: false, message: 'Failed to fetch vendor' },
+      { status: 500 }
+    );
+  }
+}
+
+/* ============================================================
+   UPDATE VENDOR (PUT)
+============================================================ */
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
+
+  console.log('✏️ Updating vendor at:', finalUrl);
+
+  try {
+    const body = await req.json();
+
+    const res = await fetch(finalUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('❌ Non-JSON response:', text.slice(0, 200));
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Backend returned non-JSON response',
+          raw: text.slice(0, 200)
+        },
+        { status: 502 }
+      );
+    }
+
+    if (!res.ok) {
+      console.error('❌ Update failed:', data);
+      return NextResponse.json(
+        { success: false, message: 'Vendor update failed', data },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vendor updated successfully',
+      vendor: data.vendor || data
+    });
+  } catch (err) {
+    console.error('❌ Vendor update error:', err);
+    return NextResponse.json(
+      { success: false, message: 'Failed to update vendor' },
+      { status: 500 }
+    );
+  }
+}
+
+/* ============================================================
+   DELETE VENDOR
+============================================================ */
+export async function DELETE(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
+  const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
+
+  console.log('🗑️ Deleting vendor at:', finalUrl);
+
+  try {
+    const res = await fetch(finalUrl, { method: 'DELETE' });
+
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('❌ Non-JSON response:', text.slice(0, 200));
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Backend returned non-JSON response',
+          raw: text.slice(0, 200)
+        },
+        { status: 502 }
+      );
+    }
+
+    if (!res.ok) {
+      console.error('❌ Delete failed:', data);
+      return NextResponse.json(
+        { success: false, message: 'Vendor delete failed', data },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vendor deleted successfully'
+    });
+  } catch (err) {
+    console.error('❌ Vendor delete error:', err);
+    return NextResponse.json(
+      { success: false, message: 'Failed to delete vendor' },
       { status: 500 }
     );
   }

@@ -5,13 +5,6 @@ import { useForm } from 'react-hook-form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription
-} from '@/components/ui/card';
 import PageContainer from '@/components/layout/page-container';
 import {
   AlertDialog,
@@ -28,7 +21,7 @@ interface VendorFormData {
   location: string;
   phone_number: string;
   services: string[];
-  location_coordinates: { lat: number; lng: number };
+  location_coordinates: string; // UPDATED
 }
 
 export default function VendorForm() {
@@ -37,15 +30,16 @@ export default function VendorForm() {
   });
 
   const [services, setServices] = useState(['']);
-  const [coords, setCoords] = useState({ lat: 0, lng: 0 });
-  const [loading, setLoading] = useState(false);
 
-  // 🔹 LocationIQ Autocomplete
+  // NEW — manual coordinates string
+  const [coordsString, setCoordsString] = useState('');
+
+  // LocationIQ autocomplete states
   const [locationQuery, setLocationQuery] = useState('');
   const [suggestions, setSuggestions] = useState<any[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // 🔹 Dialog state
+  // Dialog state
   const [dialog, setDialog] = useState<{
     open: boolean;
     title: string;
@@ -55,6 +49,7 @@ export default function VendorForm() {
 
   const LOCATIONIQ_KEY = process.env.NEXT_PUBLIC_LOCATIONIQ_KEY;
 
+  // Fetch autocomplete suggestions
   useEffect(() => {
     const fetchSuggestions = async () => {
       if (!locationQuery || locationQuery.length < 3) {
@@ -82,11 +77,13 @@ export default function VendorForm() {
 
   const handleSelectSuggestion = (item: any) => {
     setLocationQuery(item.display_name);
-    setCoords({ lat: parseFloat(item.lat), lng: parseFloat(item.lon) });
-    setSuggestions([]);
     setShowSuggestions(false);
+
+    // ❌ DO NOT auto-fill coordinates
+    // ✔ User will enter manually
   };
 
+  // Services Management
   const addService = () => setServices([...services, '']);
   const removeService = (i: number) =>
     setServices(services.filter((_, idx) => idx !== i));
@@ -96,13 +93,13 @@ export default function VendorForm() {
     setServices(updated);
   };
 
+  // Submit
   const onSubmit = async (data: VendorFormData) => {
-    setLoading(true);
     const payload = {
       ...data,
       location: locationQuery,
-      location_coordinates: coords,
-      services
+      services,
+      location_coordinates: coordsString // ✔ saved as a string
     };
 
     try {
@@ -113,6 +110,7 @@ export default function VendorForm() {
       });
 
       const result = await res.json();
+
       if (result.success) {
         setDialog({
           open: true,
@@ -120,9 +118,10 @@ export default function VendorForm() {
           message: 'Vendor created successfully!',
           success: true
         });
+
         reset();
-        setCoords({ lat: 0, lng: 0 });
         setServices(['']);
+        setCoordsString('');
         setLocationQuery('');
       } else {
         setDialog({
@@ -133,22 +132,20 @@ export default function VendorForm() {
         });
       }
     } catch (err) {
-      console.error(err);
       setDialog({
         open: true,
         title: '⚠️ Error',
         message: 'Something went wrong!',
         success: false
       });
-    } finally {
-      setLoading(false);
     }
   };
 
   return (
     <PageContainer scrollable>
       <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
-        <h1 className='text-foreground text-2xl font-bold'>Create Admin</h1>
+        <h1 className='text-2xl font-bold'>Create Admin</h1>
+
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-5'>
           <div>
             <Label>Company Name</Label>
@@ -169,8 +166,9 @@ export default function VendorForm() {
               autoComplete='off'
               className='mt-1'
             />
+
             {showSuggestions && suggestions.length > 0 && (
-              <ul className='absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border border-gray-300 bg-white shadow-md'>
+              <ul className='absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-white shadow-md'>
                 {suggestions.map((item) => (
                   <li
                     key={item.place_id}
@@ -182,11 +180,17 @@ export default function VendorForm() {
                 ))}
               </ul>
             )}
-            {coords.lat !== 0 && (
-              <p className='text-muted-foreground mt-1 text-sm'>
-                Coordinates: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
-              </p>
-            )}
+          </div>
+
+          {/* Manual Coordinates Input */}
+          <div>
+            <Label>Coordinates (lat, lng)</Label>
+            <Input
+              value={coordsString}
+              onChange={(e) => setCoordsString(e.target.value)}
+              placeholder='10.1234, 76.5678'
+              className='mt-1'
+            />
           </div>
 
           <div>
@@ -198,46 +202,44 @@ export default function VendorForm() {
             />
           </div>
 
+          {/* Services */}
           <div>
             <Label>Services</Label>
-            <div className='mt-1 space-y-2'>
-              {services.map((service, index) => (
-                <div key={index} className='flex gap-2'>
-                  <Input
-                    value={service}
-                    onChange={(e) => updateService(index, e.target.value)}
-                    placeholder={`Service ${index + 1}`}
-                  />
-                  {index > 0 && (
-                    <Button
-                      type='button'
-                      variant='destructive'
-                      onClick={() => removeService(index)}
-                    >
-                      Remove
-                    </Button>
-                  )}
-                </div>
-              ))}
-              <Button type='button' onClick={addService} variant='secondary'>
-                + Add Service
-              </Button>
-            </div>
-          </div>
-
-          <div className='justify-left flex pt-4'>
+            {services.map((service, index) => (
+              <div key={index} className='mt-1 flex gap-2'>
+                <Input
+                  value={service}
+                  onChange={(e) => updateService(index, e.target.value)}
+                  placeholder={`Service ${index + 1}`}
+                />
+                {index > 0 && (
+                  <Button
+                    type='button'
+                    variant='destructive'
+                    onClick={() => removeService(index)}
+                  >
+                    Remove
+                  </Button>
+                )}
+              </div>
+            ))}
             <Button
-              type='submit'
-              disabled={loading}
-              className='w-40 text-center'
+              type='button'
+              onClick={addService}
+              variant='secondary'
+              className='mt-2'
             >
-              {loading ? 'Submitting...' : 'Submit'}
+              + Add Service
             </Button>
           </div>
+
+          <Button type='submit' className='w-40'>
+            Submit
+          </Button>
         </form>
       </div>
 
-      {/* ✅ Alert Dialog */}
+      {/* Dialog */}
       <AlertDialog
         open={dialog.open}
         onOpenChange={(open) => setDialog({ ...dialog, open })}
@@ -250,11 +252,7 @@ export default function VendorForm() {
           <AlertDialogFooter>
             <AlertDialogAction
               onClick={() => setDialog({ ...dialog, open: false })}
-              className={
-                dialog.success
-                  ? 'bg-green-600 hover:bg-green-700'
-                  : 'bg-red-600 hover:bg-red-700'
-              }
+              className={dialog.success ? 'bg-green-600' : 'bg-red-600'}
             >
               Close
             </AlertDialogAction>
