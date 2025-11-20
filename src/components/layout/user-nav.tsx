@@ -16,12 +16,10 @@ import { useRouter } from 'next/navigation';
 export function UserNav() {
   const router = useRouter();
 
-  // 🧩 Store admin info
   const [admin, setAdmin] = useState<{ name: string; email: string } | null>(
     null
   );
 
-  // 🔍 Fetch current admin via proxy API
   useEffect(() => {
     async function fetchAdmin() {
       try {
@@ -52,7 +50,6 @@ export function UserNav() {
     }
   };
 
-  // 🧠 Derive initials from name
   const initials = admin?.name
     ? admin.name
         .split(' ')

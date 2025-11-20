@@ -54,6 +54,7 @@ export default function EditOrderPage() {
       address_line: '', // ✅ added
       heavy_items: '',
       status: '',
+      vendor_status: '',
       vendor_id: ''
     }
   });
@@ -96,7 +97,7 @@ export default function EditOrderPage() {
           const order = data.data || data.order || {};
           const pickup_address = order.pickup_address || {};
           const pickup_time_slot = order.pickup_time_slot || {};
-
+          const vendor_status = order.vendor_status || '';
           // ✅ Helper to convert "08:00 PM" → "20:00"
           const convertTo24Hr = (time12h: string) => {
             if (!time12h) return '';
@@ -133,7 +134,8 @@ export default function EditOrderPage() {
             address_line: pickup_address.address_line || '',
             heavy_items: order.heavy_items || '',
             status: order.status || 'scheduled',
-            vendor_id: vendorId || ''
+            vendor_id: vendorId || '',
+            vendor_status: vendor_status || ''
           });
         } else {
           setAlertMessage('Failed to load order.');
@@ -314,36 +316,55 @@ export default function EditOrderPage() {
                 </FormItem>
               )}
             />
+            <div className='grid grid-cols-1 gap-4 sm:grid-cols-2'>
+              {/* Status */}
+              <FormField
+                control={form.control}
+                name='status'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order Status</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder='Select status' />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value='scheduled'>Scheduled</SelectItem>
+                        <SelectItem value='picked_up'>Picked Up</SelectItem>
+                        <SelectItem value='processing'>Processing</SelectItem>
+                        <SelectItem value='ready'>Ready</SelectItem>
+                        <SelectItem value='out_for_delivery'>
+                          Out for Delivery
+                        </SelectItem>
+                        <SelectItem value='delivered'>Delivered</SelectItem>
+                        <SelectItem value='cancelled'>Cancelled</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
-            {/* Status */}
-            <FormField
-              control={form.control}
-              name='status'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Order Status</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+              {/* Vendor Status */}
+              <FormField
+                control={form.control}
+                name='vendor_status'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vendor Status</FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder='Select status' />
-                      </SelectTrigger>
+                      <Input
+                        {...field}
+                        disabled
+                        className='bg-muted w-fit cursor-not-allowed'
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value='scheduled'>Scheduled</SelectItem>
-                      <SelectItem value='picked_up'>Picked Up</SelectItem>
-                      <SelectItem value='processing'>Processing</SelectItem>
-                      <SelectItem value='ready'>Ready</SelectItem>
-                      <SelectItem value='out_for_delivery'>
-                        Out for Delivery
-                      </SelectItem>
-                      <SelectItem value='delivered'>Delivered</SelectItem>
-                      <SelectItem value='cancelled'>Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Vendor */}
             <FormField

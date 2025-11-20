@@ -41,7 +41,7 @@ export async function GET() {
       );
     }
 
-    console.log('✅ Vendors fetched successfully');
+    console.log('✅ Vendors fetched successfully', data);
 
     // 🧠 Return the actual vendor list
     const vendors =

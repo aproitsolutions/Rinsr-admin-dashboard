@@ -13,6 +13,7 @@ export type Product = {
 
 export type Order = {
   id: string;
+
   // Legacy fields used by earlier UI
   customer?: string;
   customer_email?: string;
@@ -23,6 +24,7 @@ export type Order = {
   created_at?: string;
   updated_at?: string;
   items?: OrderItem[];
+  vendor_status?: string;
 
   // Fields used by current orders listing UI (from real API)
   plan_name?: string;
@@ -30,8 +32,25 @@ export type Order = {
   plan_id_name?: string;
   address_line?: string;
   pickup_time_slot?: string;
-  vendor_id?: string | { _id: string; company_name?: string };
-  vendor?: { _id: string; company_name?: string };
+
+  vendor_id?:
+    | string
+    | {
+        _id: string;
+        company_name?: string;
+        phone_number?: string;
+        status?: string;
+        location?: string;
+      };
+
+  vendor?: {
+    _id: string;
+    company_name?: string;
+    phone_number?: string;
+    status?: string;
+    location?: string;
+  };
+
   hub_id?: string | { _id: string; name?: string };
   hub?: { _id: string; name?: string };
 };
@@ -71,6 +90,14 @@ export const navItems: NavItem[] = [
     icon: 'order',
     isActive: false,
     shortcut: ['d', 'd'],
+    items: []
+  },
+  {
+    title: 'Vendor Orders',
+    url: '/dashboard/vendor-orders',
+    icon: 'order',
+    isActive: false,
+    shortcut: ['d', 'v'],
     items: []
   },
   {
@@ -131,6 +158,12 @@ export const navItems: NavItem[] = [
       {
         title: 'Profile',
         url: '/dashboard/profile',
+        icon: 'userPen',
+        shortcut: ['m', 'm']
+      },
+      {
+        title: 'Actions',
+        url: '/dashboard/actions',
         icon: 'userPen',
         shortcut: ['m', 'm']
       }
