@@ -38,20 +38,20 @@ export async function GET(request: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to fetch reports' },
         { status: upstream.status }
       );
     }
 
-    console.log('✅ Reports data fetched successfully');
+    console.log(' Reports data fetched successfully');
     return NextResponse.json(
       { success: true, message: 'Reports fetched successfully', data },
       { status: 200 }
     );
   } catch (error) {
-    console.error('💥 Proxy /api/reports error:', error);
+    console.error(' Proxy /api/reports error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }

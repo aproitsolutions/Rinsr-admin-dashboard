@@ -10,28 +10,31 @@ interface HubResponse {
 
 // GET /api/hubs/[id] - fetch single hub
 export async function GET(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const hubId = params.id;
-  console.log(`🟢 GET /api/hubs/${hubId}`);
+  console.log(`GET /api/hubs/${hubId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('rinsr_token')?.value;
     const token = cookieToken || undefined;
 
-    if (!baseUrl)
+    if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'Missing RINSR_API_BASE' },
         { status: 500 }
       );
+    }
 
-    if (!token)
+    if (!token) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
+    }
 
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
@@ -47,14 +50,14 @@ export async function GET(
     });
 
     const rawText = await upstreamRes.text();
-    let data;
+    let data: any;
     try {
       data = JSON.parse(rawText);
     } catch {
       data = { raw: rawText };
     }
 
-    console.log('➡️ Upstream GET hub response:', JSON.stringify(data, null, 2));
+    console.log('Upstream GET hub response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -72,7 +75,7 @@ export async function GET(
       hub: data?.hub ?? data
     });
   } catch (err) {
-    console.error('🔥 GET /hubs/[id] failed:', err);
+    console.error(' GET /hubs/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }
@@ -82,31 +85,35 @@ export async function GET(
 
 // PUT /api/hubs/[id] - update hub
 export async function PUT(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const hubId = params.id;
-  console.log(`🟡 PUT /api/hubs/${hubId}`);
+  console.log(`PUT /api/hubs/${hubId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
+
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('rinsr_token')?.value;
     const token = cookieToken || undefined;
 
-    if (!baseUrl)
+    if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'Missing RINSR_API_BASE' },
         { status: 500 }
       );
+    }
 
-    if (!token)
+    if (!token) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
+    }
 
-    const body = await request.json();
-    console.log('📦 Update hub payload:', JSON.stringify(body, null, 2));
+    const body = await req.json();
+    console.log('Update hub payload:', JSON.stringify(body, null, 2));
 
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
@@ -123,14 +130,14 @@ export async function PUT(
     });
 
     const rawText = await upstreamRes.text();
-    let data;
+    let data: any;
     try {
       data = JSON.parse(rawText);
     } catch {
       data = { raw: rawText };
     }
 
-    console.log('📤 Upstream PUT hub response:', JSON.stringify(data, null, 2));
+    console.log('Upstream PUT hub response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -149,7 +156,7 @@ export async function PUT(
       hub: data?.hub ?? data
     });
   } catch (err) {
-    console.error('🔥 PUT /hubs/[id] failed:', err);
+    console.error('PUT /hubs/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }
@@ -159,28 +166,31 @@ export async function PUT(
 
 // DELETE /api/hubs/[id] - delete hub
 export async function DELETE(
-  request: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const hubId = params.id;
-  console.log(`🔴 DELETE /api/hubs/${hubId}`);
+  console.log(`DELETE /api/hubs/${hubId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('rinsr_token')?.value;
     const token = cookieToken || undefined;
 
-    if (!baseUrl)
+    if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'Missing RINSR_API_BASE' },
         { status: 500 }
       );
+    }
 
-    if (!token)
+    if (!token) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized' },
         { status: 401 }
       );
+    }
 
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
@@ -195,17 +205,14 @@ export async function DELETE(
     });
 
     const rawText = await upstreamRes.text();
-    let data;
+    let data: any;
     try {
       data = JSON.parse(rawText);
     } catch {
       data = { raw: rawText };
     }
 
-    console.log(
-      '🗑️ Upstream DELETE hub response:',
-      JSON.stringify(data, null, 2)
-    );
+    console.log('Upstream DELETE hub response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -223,7 +230,7 @@ export async function DELETE(
       message: data?.message || 'Hub deleted successfully'
     });
   } catch (err) {
-    console.error('🔥 DELETE /hubs/[id] failed:', err);
+    console.error('DELETE /hubs/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

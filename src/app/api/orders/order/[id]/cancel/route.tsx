@@ -8,7 +8,7 @@ export async function PATCH(
   // ✅ Must await before accessing
   const { id: orderId } = await context.params;
 
-  console.log(`🟢 PATCH /api/orders/order/${orderId}/cancel`);
+  console.log(`PATCH /api/orders/order/${orderId}/cancel`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -46,7 +46,7 @@ export async function PATCH(
     );
 
     const data = await upstreamRes.json().catch(() => ({}));
-    console.log('➡️ Upstream response:', upstreamRes.status, data);
+    console.log(' Upstream response:', upstreamRes.status, data);
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -64,7 +64,7 @@ export async function PATCH(
       data
     });
   } catch (err) {
-    console.error('🔥 Cancel order error:', err);
+    console.error(' Cancel order error:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

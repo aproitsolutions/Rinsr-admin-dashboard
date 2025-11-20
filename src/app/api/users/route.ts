@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     const data = await upstreamRes.json().catch(() => ({}));
 
     if (!upstreamRes.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         {
           success: false,
@@ -62,7 +62,7 @@ export async function GET(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error('Proxy error:', error);
     return NextResponse.json(
       {
         success: false,
@@ -110,7 +110,7 @@ export async function POST(request: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to create user' },
         { status: upstream.status }
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error(' Proxy error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }

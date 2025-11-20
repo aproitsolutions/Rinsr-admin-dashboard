@@ -25,7 +25,7 @@ export async function GET(
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const finalUrl = `${normalizedBase}/users/${id}`;
 
-    console.log('📡 Fetching user from:', finalUrl);
+    console.log(' Fetching user from:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
       method: 'GET',
@@ -39,7 +39,7 @@ export async function GET(
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to fetch user' },
         { status: upstream.status }
@@ -51,7 +51,7 @@ export async function GET(
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error(' Proxy error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }
@@ -84,7 +84,7 @@ export async function PATCH(
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const finalUrl = `${normalizedBase}/users/${id}`;
 
-    console.log('📡 Updating user at:', finalUrl);
+    console.log(' Updating user at:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
       method: 'PATCH',
@@ -98,7 +98,7 @@ export async function PATCH(
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to update user' },
         { status: upstream.status }
@@ -110,7 +110,7 @@ export async function PATCH(
       { status: 200 }
     );
   } catch (error) {
-    console.error('❌ Proxy error:', error);
+    console.error(' Proxy error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }

@@ -95,9 +95,9 @@ export async function POST(
         vendor_id: vendor_id
       };
 
-      console.log(`📤 Updating order ${orderId} with vendor_id: ${vendor_id}`);
+      console.log(`Updating order ${orderId} with vendor_id: ${vendor_id}`);
       console.log(
-        `📤 Using PATCH method with:`,
+        ` Using PATCH method with:`,
         JSON.stringify(patchPayload, null, 2)
       );
 
@@ -114,7 +114,7 @@ export async function POST(
 
       // If PATCH fails, try PUT with full order
       if (!upstreamRes.ok) {
-        console.log(`⚠️ PATCH failed, trying PUT with full order`);
+        console.log(`PATCH failed, trying PUT with full order`);
         const updatePayload = {
           ...currentOrder,
           vendor_id: vendor_id
@@ -141,7 +141,7 @@ export async function POST(
     }
 
     console.log(
-      '➡️ Upstream assign-vendor response:',
+      ' Upstream assign-vendor response:',
       JSON.stringify(data, null, 2)
     );
 
@@ -162,7 +162,7 @@ export async function POST(
       data: data?.order ?? data?.data ?? data
     });
   } catch (err) {
-    console.error('🔥 POST /assign-vendor error:', err);
+    console.error(' POST /assign-vendor error:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

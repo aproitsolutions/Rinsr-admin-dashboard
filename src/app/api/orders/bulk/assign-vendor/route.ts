@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
  * Bulk assign vendor to multiple orders
  */
 export async function POST(request: NextRequest) {
-  console.log(`🟢 POST /api/orders/bulk/assign-vendor`);
+  console.log(` POST /api/orders/bulk/assign-vendor`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `📦 Bulk assigning vendor ${vendor_id} to ${order_ids.length} orders`
+      ` Bulk assigning vendor ${vendor_id} to ${order_ids.length} orders`
     );
 
     const normalizedBase = baseUrl.endsWith('/api')
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      '➡️ Upstream bulk assign-vendor response:',
+      'Upstream bulk assign-vendor response:',
       JSON.stringify(data, null, 2)
     );
 
@@ -82,7 +82,7 @@ export async function POST(request: NextRequest) {
       // If bulk endpoint doesn't exist (404), fallback to individual assign-vendor endpoints
       if (upstreamRes.status === 404) {
         console.log(
-          `⚠️ Bulk endpoint not found, falling back to individual assign-vendor endpoints (POST)`
+          ` Bulk endpoint not found, falling back to individual assign-vendor endpoints (POST)`
         );
 
         let successCount = 0;
@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       data: data?.orders ?? data?.data ?? data
     });
   } catch (err) {
-    console.error('🔥 POST /bulk/assign-vendor error:', err);
+    console.error(' POST /bulk/assign-vendor error:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

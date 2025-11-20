@@ -12,7 +12,7 @@ export async function GET(
 ) {
   // ✅ FIX: Await params before accessing it
   const { id: orderId } = await context.params;
-  console.log(`🟢 GET /api/orders/order/${orderId}`);
+  console.log(` GET /api/orders/order/${orderId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -48,7 +48,7 @@ export async function GET(
       data = { raw: rawText };
     }
 
-    console.log('➡️ Upstream GET response:', JSON.stringify(data, null, 2));
+    console.log(' Upstream GET response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -64,7 +64,7 @@ export async function GET(
     // Ensure vendor_id is included in response
     const order = data?.order ?? data?.data ?? data;
     console.log(
-      `📦 Order ${orderId} vendor_id:`,
+      ` Order ${orderId} vendor_id:`,
       order?.vendor_id || order?.vendor || 'not found'
     );
 
@@ -74,7 +74,7 @@ export async function GET(
       data: order
     });
   } catch (err) {
-    console.error('🔥 GET error:', err);
+    console.error(' GET error:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }
@@ -113,7 +113,7 @@ export async function PUT(
     const body = await request.json();
 
     console.log(
-      `📤 PUT /api/orders/order/${orderId} payload:`,
+      ` PUT /api/orders/order/${orderId} payload:`,
       JSON.stringify(body, null, 2)
     );
 
@@ -148,7 +148,7 @@ export async function PUT(
 
     const updatedOrder = data?.order ?? data?.data ?? data;
     console.log(
-      `➡️ PUT response vendor_id:`,
+      ` PUT response vendor_id:`,
       updatedOrder?.vendor_id || updatedOrder?.vendor || 'not found'
     );
 

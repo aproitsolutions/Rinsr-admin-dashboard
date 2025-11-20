@@ -105,7 +105,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    console.log('📦 Plan Create Payload:', JSON.stringify(body, null, 2));
+    console.log(' Plan Create Payload:', JSON.stringify(body, null, 2));
 
     const upstreamRes = await fetch(`${baseUrl}/plans`, {
       method: 'POST',
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     }
 
     console.log(
-      '📤 Upstream Plan Create Response:',
+      ' Upstream Plan Create Response:',
       JSON.stringify(data, null, 2)
     );
 
@@ -147,7 +147,7 @@ export async function POST(request: Request) {
       data
     });
   } catch (err) {
-    console.error('🔥 POST /api/plans failed:', err);
+    console.error(' POST /api/plans failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

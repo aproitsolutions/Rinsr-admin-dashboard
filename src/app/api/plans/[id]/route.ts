@@ -17,7 +17,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const planId = params.id;
-  console.log(`🟢 GET /api/plans/${planId}`);
+  console.log(` GET /api/plans/${planId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -57,10 +57,7 @@ export async function GET(
       data = { raw: rawText };
     }
 
-    console.log(
-      '➡️ Upstream GET plan response:',
-      JSON.stringify(data, null, 2)
-    );
+    console.log(' Upstream GET plan response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -75,7 +72,7 @@ export async function GET(
 
     return NextResponse.json({ success: true, plan: data?.plan ?? data });
   } catch (err) {
-    console.error('🔥 GET /plans/[id] failed:', err);
+    console.error(' GET /plans/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }
@@ -92,7 +89,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   const planId = params.id;
-  console.log(`🟡 PUT /api/plans/${planId}`);
+  console.log(` PUT /api/plans/${planId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -112,7 +109,7 @@ export async function PUT(
       );
 
     const body = await request.json();
-    console.log('📦 Update plan payload:', JSON.stringify(body, null, 2));
+    console.log(' Update plan payload:', JSON.stringify(body, null, 2));
 
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
@@ -158,7 +155,7 @@ export async function PUT(
       plan: data?.plan ?? data
     });
   } catch (err) {
-    console.error('🔥 PUT /plans/[id] failed:', err);
+    console.error(' PUT /plans/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }
@@ -175,7 +172,7 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ) {
   const planId = params.id;
-  console.log(`🔴 DELETE /api/plans/${planId}`);
+  console.log(` DELETE /api/plans/${planId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -214,7 +211,7 @@ export async function DELETE(
       data = { raw: rawText };
     }
 
-    console.log('🗑️ Upstream DELETE response:', JSON.stringify(data, null, 2));
+    console.log(' Upstream DELETE response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -232,7 +229,7 @@ export async function DELETE(
       message: data?.message || 'Plan deleted successfully'
     });
   } catch (err) {
-    console.error('🔥 DELETE /plans/[id] failed:', err);
+    console.error(' DELETE /plans/[id] failed:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

@@ -83,7 +83,7 @@ export async function PUT(
     try {
       data = JSON.parse(text);
     } catch {
-      console.error('❌ Non-JSON response:', text.slice(0, 200));
+      console.error(' Non-JSON response:', text.slice(0, 200));
       return NextResponse.json(
         {
           success: false,
@@ -95,7 +95,7 @@ export async function PUT(
     }
 
     if (!res.ok) {
-      console.error('❌ Update failed:', data);
+      console.error(' Update failed:', data);
       return NextResponse.json(
         { success: false, message: 'Vendor update failed', data },
         { status: res.status }
@@ -108,7 +108,7 @@ export async function PUT(
       vendor: data.vendor || data
     });
   } catch (err) {
-    console.error('❌ Vendor update error:', err);
+    console.error(' Vendor update error:', err);
     return NextResponse.json(
       { success: false, message: 'Failed to update vendor' },
       { status: 500 }
@@ -126,7 +126,7 @@ export async function DELETE(
   const { id } = await context.params;
   const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
 
-  console.log('🗑️ Deleting vendor at:', finalUrl);
+  console.log(' Deleting vendor at:', finalUrl);
 
   try {
     const res = await fetch(finalUrl, { method: 'DELETE' });
@@ -137,7 +137,7 @@ export async function DELETE(
     try {
       data = JSON.parse(text);
     } catch {
-      console.error('❌ Non-JSON response:', text.slice(0, 200));
+      console.error(' Non-JSON response:', text.slice(0, 200));
       return NextResponse.json(
         {
           success: false,
@@ -149,7 +149,7 @@ export async function DELETE(
     }
 
     if (!res.ok) {
-      console.error('❌ Delete failed:', data);
+      console.error(' Delete failed:', data);
       return NextResponse.json(
         { success: false, message: 'Vendor delete failed', data },
         { status: res.status }
@@ -161,7 +161,7 @@ export async function DELETE(
       message: 'Vendor deleted successfully'
     });
   } catch (err) {
-    console.error('❌ Vendor delete error:', err);
+    console.error('Vendor delete error:', err);
     return NextResponse.json(
       { success: false, message: 'Failed to delete vendor' },
       { status: 500 }

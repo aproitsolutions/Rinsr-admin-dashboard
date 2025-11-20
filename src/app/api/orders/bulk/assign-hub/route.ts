@@ -6,7 +6,7 @@ import { cookies } from 'next/headers';
  * Bulk assign hub to multiple orders
  */
 export async function POST(request: NextRequest) {
-  console.log(`🟢 POST /api/orders/bulk/assign-hub`);
+  console.log(` POST /api/orders/bulk/assign-hub`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      `📦 Bulk assigning hub ${hub_id} to ${order_ids.length} order(s):`,
+      ` Bulk assigning hub ${hub_id} to ${order_ids.length} order(s):`,
       order_ids.join(', ')
     );
 
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
     }
 
     console.log(
-      '➡️ Upstream bulk assign-hub response:',
+      ' Upstream bulk assign-hub response:',
       JSON.stringify(data, null, 2)
     );
 
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
       data: data?.orders ?? data?.data ?? data
     });
   } catch (err) {
-    console.error('🔥 POST /bulk/assign-hub error:', err);
+    console.error(' POST /bulk/assign-hub error:', err);
     return NextResponse.json(
       { success: false, message: 'Server error', error: String(err) },
       { status: 500 }

@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 
 export async function GET() {
   try {
-    const baseUrl = process.env.RINSR_API_BASE; // e.g. https://rinsrapi.aproitsolutions.in/api
+    const baseUrl = process.env.RINSR_API_BASE;
     const token = (await cookies()).get('rinsr_token')?.value;
 
     if (!baseUrl)
@@ -21,7 +21,7 @@ export async function GET() {
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const finalUrl = `${normalizedBase}/vendors`;
 
-    console.log('📡 Fetching vendors from:', finalUrl);
+    console.log(' Fetching vendors from:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
       headers: {
@@ -34,16 +34,15 @@ export async function GET() {
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error(' Upstream error:', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to fetch vendors' },
         { status: upstream.status }
       );
     }
 
-    console.log('✅ Vendors fetched successfully', data);
+    console.log('Vendors fetched successfully', data);
 
-    // 🧠 Return the actual vendor list
     const vendors =
       data.vendors ||
       data.data?.vendors ||
@@ -56,7 +55,7 @@ export async function GET() {
       vendors // <-- Send the array here
     });
   } catch (error) {
-    console.error('💥 Proxy /api/vendors error:', error);
+    console.error('Proxy /api/vendors error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }
@@ -66,7 +65,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const baseUrl = process.env.RINSR_API_BASE; // e.g. https://rinsrapi.aproitsolutions.in/api
+    const baseUrl = process.env.RINSR_API_BASE;
     const token = (await cookies()).get('rinsr_token')?.value;
 
     if (!baseUrl)
@@ -100,20 +99,20 @@ export async function POST(request: NextRequest) {
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error('❌ Upstream error (create vendor):', data);
+      console.error('Upstream error (create vendor):', data);
       return NextResponse.json(
         { success: false, message: data.message || 'Failed to create vendor' },
         { status: upstream.status }
       );
     }
 
-    console.log('✅ Vendor created successfully');
+    console.log(' Vendor created successfully');
     return NextResponse.json(
       { success: true, message: 'Vendor created successfully', data },
       { status: 200 }
     );
   } catch (error) {
-    console.error('💥 Proxy /api/vendors POST error:', error);
+    console.error(' Proxy /api/vendors POST error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }
