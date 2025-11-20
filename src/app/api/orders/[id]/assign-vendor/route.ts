@@ -7,14 +7,16 @@ import { cookies } from 'next/headers';
  */
 export async function POST(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } } // ✅ params is a plain object, not Promise
 ) {
-  const { id: orderId } = await context.params;
+  const orderId = params.id;
   console.log(`🟢 POST /api/orders/${orderId}/assign-vendor`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const token = (await cookies()).get('rinsr_token')?.value;
+
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
 
     if (!baseUrl) {
       return NextResponse.json(
@@ -90,9 +92,8 @@ export async function POST(
       const orderData = await getRes.json();
       const currentOrder = orderData.order || orderData.data || orderData;
 
-      // Use PATCH method (works in Insomnia)
       const patchPayload = {
-        vendor_id: vendor_id
+        vendor_id
       };
 
       console.log(`Updating order ${orderId} with vendor_id: ${vendor_id}`);
@@ -101,7 +102,7 @@ export async function POST(
         JSON.stringify(patchPayload, null, 2)
       );
 
-      // Try PATCH first (since it works in Insomnia)
+      // Try PATCH first
       upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -117,7 +118,7 @@ export async function POST(
         console.log(`PATCH failed, trying PUT with full order`);
         const updatePayload = {
           ...currentOrder,
-          vendor_id: vendor_id
+          vendor_id
         };
 
         upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {

@@ -1,30 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
+// GET /api/users/[id]
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
+
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const token = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
 
-    if (!baseUrl)
+    if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'Missing RINSR_API_BASE' },
         { status: 500 }
       );
+    }
 
-    if (!token)
+    if (!token) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized: Missing token' },
         { status: 401 }
       );
+    }
 
-    const normalizedBase = baseUrl.replace(/\/+$/, '');
+    const normalizedBase = baseUrl.endsWith('/api')
+      ? baseUrl
+      : `${baseUrl.replace(/\/+$/, '')}/api`;
+
     const finalUrl = `${normalizedBase}/users/${id}`;
-
     console.log(' Fetching user from:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
@@ -59,31 +66,38 @@ export async function GET(
   }
 }
 
+// PATCH /api/users/[id]
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await params;
+  const { id } = params;
+
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const token = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
     const body = await request.json();
 
-    if (!baseUrl)
+    if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'Missing RINSR_API_BASE' },
         { status: 500 }
       );
+    }
 
-    if (!token)
+    if (!token) {
       return NextResponse.json(
         { success: false, message: 'Unauthorized: Missing token' },
         { status: 401 }
       );
+    }
 
-    const normalizedBase = baseUrl.replace(/\/+$/, '');
+    const normalizedBase = baseUrl.endsWith('/api')
+      ? baseUrl
+      : `${baseUrl.replace(/\/+$/, '')}/api`;
+
     const finalUrl = `${normalizedBase}/users/${id}`;
-
     console.log(' Updating user at:', finalUrl);
 
     const upstream = await fetch(finalUrl, {

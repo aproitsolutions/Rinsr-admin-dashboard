@@ -3,20 +3,20 @@ import { cookies } from 'next/headers';
 import { OrderResponse } from '@/constants/data';
 
 /**
- * GET /api/orders/[orderId]
+ * GET /api/orders/order/[id]
  * Get a single order by ID
  */
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> } // ✅ Must be Promise
+  { params }: { params: { id: string } }
 ) {
-  // ✅ FIX: Await params before accessing it
-  const { id: orderId } = await context.params;
+  const orderId = params.id;
   console.log(` GET /api/orders/order/${orderId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const token = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
 
     if (!baseUrl) {
       return NextResponse.json(
@@ -32,7 +32,12 @@ export async function GET(
       );
     }
 
-    const upstreamRes = await fetch(`${baseUrl}/orders/${orderId}`, {
+    // normalize base to /api if needed
+    const normalizedBase = baseUrl.endsWith('/api')
+      ? baseUrl
+      : `${baseUrl.replace(/\/+$/, '')}/api`;
+
+    const upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -61,7 +66,6 @@ export async function GET(
       );
     }
 
-    // Ensure vendor_id is included in response
     const order = data?.order ?? data?.data ?? data;
     console.log(
       ` Order ${orderId} vendor_id:`,
@@ -70,7 +74,7 @@ export async function GET(
 
     return NextResponse.json({
       success: true,
-      order: order, // Use 'order' key for consistency
+      order,
       data: order
     });
   } catch (err) {
@@ -94,7 +98,8 @@ export async function PUT(
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
-    const token = (await cookies()).get('rinsr_token')?.value;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
 
     if (!baseUrl) {
       return NextResponse.json(
@@ -117,7 +122,11 @@ export async function PUT(
       JSON.stringify(body, null, 2)
     );
 
-    const upstreamRes = await fetch(`${baseUrl}/orders/${orderId}`, {
+    const normalizedBase = baseUrl.endsWith('/api')
+      ? baseUrl
+      : `${baseUrl.replace(/\/+$/, '')}/api`;
+
+    const upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
       method: 'PUT',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -171,18 +180,20 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/orders/[orderId]
+ * DELETE /api/orders/order/[id]
  * Delete an order
  */
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ orderId: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { orderId } = await params;
+    const orderId = params.id;
+
     const baseUrl = process.env.RINSR_API_BASE;
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
-    const token = cookieToken || undefined;
+    const cookieStore = await cookies();
+    const token = cookieStore.get('rinsr_token')?.value;
+
     if (!baseUrl) {
       const errorResponse: OrderResponse = {
         success: false,
@@ -191,6 +202,7 @@ export async function DELETE(
       };
       return NextResponse.json(errorResponse, { status: 500 });
     }
+
     if (!token) {
       const errorResponse: OrderResponse = {
         success: false,
@@ -200,17 +212,20 @@ export async function DELETE(
       return NextResponse.json(errorResponse, { status: 401 });
     }
 
-    const normalizedBase = baseUrl?.endsWith('/api')
+    const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
-      : `${baseUrl?.replace(/\/+$/, '')}/api`;
-    const upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}/`, {
+      : `${baseUrl.replace(/\/+$/, '')}/api`;
+
+    const upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
       method: 'DELETE',
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: 'application/json'
       }
     });
+
     const data = await upstreamRes.json().catch(() => ({}));
+
     if (!upstreamRes.ok) {
       const errorResponse: OrderResponse = {
         success: false,

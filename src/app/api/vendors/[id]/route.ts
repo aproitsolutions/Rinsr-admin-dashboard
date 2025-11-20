@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL ||
@@ -8,10 +8,10 @@ const BASE_URL =
    GET VENDOR DETAILS
 ============================================================ */
 export async function GET(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } = params;
   const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
 
   console.log('📡 Fetching vendor details from:', finalUrl);
@@ -60,10 +60,10 @@ export async function GET(
    UPDATE VENDOR (PUT)
 ============================================================ */
 export async function PUT(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } = params;
   const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
 
   console.log('✏️ Updating vendor at:', finalUrl);
@@ -120,10 +120,10 @@ export async function PUT(
    DELETE VENDOR
 ============================================================ */
 export async function DELETE(
-  req: Request,
-  context: { params: Promise<{ id: string }> }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
-  const { id } = await context.params;
+  const { id } = params;
   const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}`;
 
   console.log(' Deleting vendor at:', finalUrl);
