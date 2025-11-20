@@ -2,11 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
 // ✅ GET single admin
-export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+export async function GET(req: NextRequest, context: any) {
+  const id = context?.params?.id;
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -58,11 +55,8 @@ export async function GET(
 }
 
 // ✅ PUT update admin
-export async function PUT(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
-  const { id } = params;
+export async function PUT(req: NextRequest, context: any) {
+  const id = context?.params?.id;
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;

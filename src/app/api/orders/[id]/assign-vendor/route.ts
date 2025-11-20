@@ -6,8 +6,8 @@ import { cookies } from 'next/headers';
  * Assign a vendor to an order
  */
 export async function POST(
-  request: NextRequest,
-  { params }: { params: { id: string } } // ✅ params is a plain object, not Promise
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   const orderId = params.id;
   console.log(`🟢 POST /api/orders/${orderId}/assign-vendor`);
@@ -32,7 +32,7 @@ export async function POST(
       );
     }
 
-    const body = await request.json();
+    const body = await req.json();
     const { vendor_id } = body;
 
     if (!vendor_id) {
@@ -48,7 +48,6 @@ export async function POST(
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    // Try the assign-vendor endpoint first
     let upstreamRes = await fetch(
       `${normalizedBase}/orders/${orderId}/assign-vendor`,
       {
@@ -62,13 +61,11 @@ export async function POST(
       }
     );
 
-    // If assign-vendor endpoint doesn't exist (404), fetch order first then update with vendor_id
     if (upstreamRes.status === 404) {
       console.log(
         `⚠️ assign-vendor endpoint not found, fetching order and updating with vendor_id`
       );
 
-      // Fetch current order
       const getRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
         method: 'GET',
         headers: {
@@ -92,17 +89,14 @@ export async function POST(
       const orderData = await getRes.json();
       const currentOrder = orderData.order || orderData.data || orderData;
 
-      const patchPayload = {
-        vendor_id
-      };
+      const patchPayload = { vendor_id };
 
       console.log(`Updating order ${orderId} with vendor_id: ${vendor_id}`);
       console.log(
-        ` Using PATCH method with:`,
+        ' Using PATCH method with:',
         JSON.stringify(patchPayload, null, 2)
       );
 
-      // Try PATCH first
       upstreamRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
         method: 'PATCH',
         headers: {
@@ -113,9 +107,8 @@ export async function POST(
         body: JSON.stringify(patchPayload)
       });
 
-      // If PATCH fails, try PUT with full order
       if (!upstreamRes.ok) {
-        console.log(`PATCH failed, trying PUT with full order`);
+        console.log('PATCH failed, trying PUT with full order');
         const updatePayload = {
           ...currentOrder,
           vendor_id
