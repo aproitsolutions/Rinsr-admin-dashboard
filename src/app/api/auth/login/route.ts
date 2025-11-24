@@ -13,7 +13,8 @@ function extractToken(payload: any): string | undefined {
 
 export async function POST(request: NextRequest) {
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_RINSR_API_BASE;
+    const baseUrl = process.env.RINSR_API_BASE; // FIXED
+
     if (!baseUrl) {
       return NextResponse.json(
         { success: false, message: 'RINSR_API_BASE not configured' },
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
     });
 
     const data = await upstream.json().catch(() => ({}));
+
     if (!upstream.ok) {
       return NextResponse.json(
         { success: false, message: data?.message || upstream.statusText },
@@ -52,7 +54,7 @@ export async function POST(request: NextRequest) {
         sameSite: 'lax',
         secure: process.env.NODE_ENV === 'production',
         path: '/',
-        maxAge: 60 * 60 * 24 * 7
+        maxAge: 60 * 60 * 24 * 7 // 7 days
       });
     }
 

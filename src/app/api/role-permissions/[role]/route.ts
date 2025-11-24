@@ -10,14 +10,15 @@ interface PermissionsResponse {
 }
 
 export async function GET(
-  request: NextRequest,
-  context: { params: { role: string } }
+  _request: NextRequest,
+  { params }: { params: Promise<{ role: string }> }
 ) {
   try {
-    const { role } = context.params;
-    const baseUrl = process.env.RINSR_API_BASE;
+    const { role } = await params;
 
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
+    const baseUrl = process.env.RINSR_API_BASE;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('rinsr_token')?.value;
     const token = cookieToken || undefined;
 
     if (!baseUrl) {
@@ -42,12 +43,10 @@ export async function GET(
       );
     }
 
-    // ensure base ends with /api
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    // GET from backend
     const upstreamRes = await fetch(
       `${normalizedBase}/role-permissions/${role}`,
       {
@@ -94,13 +93,14 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  context: { params: { role: string } }
+  { params }: { params: Promise<{ role: string }> }
 ) {
   try {
-    const { role } = context.params;
-    const baseUrl = process.env.RINSR_API_BASE;
+    const { role } = await params;
 
-    const cookieToken = (await cookies()).get('rinsr_token')?.value;
+    const baseUrl = process.env.RINSR_API_BASE;
+    const cookieStore = await cookies();
+    const cookieToken = cookieStore.get('rinsr_token')?.value;
     const token = cookieToken || undefined;
 
     if (!baseUrl) {
@@ -123,7 +123,6 @@ export async function PUT(
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    // Forward PUT to backend
     const upstreamRes = await fetch(
       `${normalizedBase}/role-permissions/${role}`,
       {

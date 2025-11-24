@@ -41,7 +41,7 @@ export async function GET() {
       );
     }
 
-    console.log('Vendors fetched successfully', data);
+    // console.log('Vendors fetched successfully', data);
 
     const vendors =
       data.vendors ||

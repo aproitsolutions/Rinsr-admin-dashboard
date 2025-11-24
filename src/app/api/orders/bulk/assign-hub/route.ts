@@ -73,10 +73,10 @@ export async function POST(request: NextRequest) {
       data = { raw: rawText };
     }
 
-    console.log(
-      ' Upstream bulk assign-hub response:',
-      JSON.stringify(data, null, 2)
-    );
+    // console.log(
+    //   ' Upstream bulk assign-hub response:',
+    //   JSON.stringify(data, null, 2)
+    // );
 
     if (!upstreamRes.ok) {
       return NextResponse.json(

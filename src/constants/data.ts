@@ -193,3 +193,51 @@ export interface SaleUser {
   image: string;
   initials: string;
 }
+
+export type UserRole = 'super_admin' | 'admin' | 'vendor_user' | 'hub_user';
+
+export interface CurrentAdmin {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+  allowedPages: string[]; // ['*'] means all pages
+}
+
+function hasAccessToUrl(url: string, user: CurrentAdmin): boolean {
+  // super_admin can see everything
+  if (user.role === 'super_admin') return true;
+
+  // wildcard if you ever send ['*'] from backend
+  if (user.allowedPages.includes('*')) return true;
+
+  // parent with '#' is controlled by its children
+  if (!url || url === '#') return true;
+
+  // simple rule: any allowed page is a prefix of url
+  return user.allowedPages.some((page) => url.startsWith(page));
+}
+
+// no NavItem | null, so no TS error
+export function filterNavItemsByPermissions(user: CurrentAdmin): NavItem[] {
+  const result: NavItem[] = [];
+
+  for (const item of navItems) {
+    const childItems = (item.items ?? []).filter((child) =>
+      hasAccessToUrl(child.url, user)
+    );
+
+    const canSeeSelf = hasAccessToUrl(item.url, user);
+
+    const keepParent = item.url === '#' ? childItems.length > 0 : canSeeSelf;
+
+    if (!keepParent) continue;
+
+    result.push({
+      ...item,
+      items: childItems
+    });
+  }
+
+  return result;
+}

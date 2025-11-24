@@ -29,7 +29,12 @@ import {
   SidebarRail
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { navItems } from '@/constants/data';
+import {
+  navItems,
+  filterNavItemsByPermissions,
+  type CurrentAdmin,
+  type UserRole
+} from '@/constants/data';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
   IconBell,
@@ -45,6 +50,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
+
 export const company = {
   name: 'Acme Inc',
   logo: IconPhotoUp,
@@ -57,9 +63,18 @@ const tenants = [
   { id: '3', name: 'Gamma Ltd' }
 ];
 
+type RawAdmin = {
+  _id: string;
+  name: string;
+  email: string;
+  role: UserRole;
+};
+
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
+  const router = useRouter();
+
   const onLogout = async () => {
     try {
       await fetch('/api/auth/logout', {
@@ -70,7 +85,7 @@ export default function AppSidebar() {
       window.location.replace('/auth/login');
     }
   };
-  const router = useRouter();
+
   const handleSwitchTenant = (_tenantId: string) => {
     // Tenant switching functionality would be implemented here
   };
@@ -81,29 +96,75 @@ export default function AppSidebar() {
     // Side effects based on sidebar state changes
   }, [isOpen]);
 
-  const [admin, setAdmin] = React.useState<{
-    name: string;
-    email: string;
-  } | null>(null);
+  const [admin, setAdmin] = React.useState<CurrentAdmin | null>(null);
+  const [items, setItems] = React.useState(navItems);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    async function fetchAdmin() {
+    async function fetchAdminAndPermissions() {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) return;
-        const data = await res.json();
-        if (data?.success && data?.admin) {
-          setAdmin({
-            name: data.admin.name,
-            email: data.admin.email
-          });
+        if (!res.ok) {
+          setLoading(false);
+          return;
         }
+
+        const data = await res.json();
+        if (!(data?.success && data?.admin)) {
+          setLoading(false);
+          return;
+        }
+
+        const raw: RawAdmin = data.admin;
+
+        let allowedPages: string[] = [];
+
+        if (raw.role === 'super_admin') {
+          allowedPages = ['*'];
+        } else {
+          const resPerm = await fetch(`/api/role-permissions/${raw.role}`, {
+            credentials: 'include',
+            cache: 'no-store'
+          });
+
+          if (resPerm.ok) {
+            const permData = await resPerm.json();
+            allowedPages = permData.allowedPages || [];
+          } else {
+            // Fallback so sidebar does NOT become blank
+            allowedPages = [];
+            console.warn(
+              'Permissions API returned error, using fallback empty permissions'
+            );
+          }
+        }
+
+        const curr: CurrentAdmin = {
+          id: raw._id,
+          name: raw.name,
+          email: raw.email,
+          role: raw.role,
+          allowedPages
+        };
+
+        setAdmin(curr);
+
+        const filtered = filterNavItemsByPermissions(curr);
+        setItems(filtered);
       } catch (err) {
-        console.error('Failed to fetch admin:', err);
+        console.error('Failed to fetch admin or permissions:', err);
+      } finally {
+        setLoading(false);
       }
     }
-    fetchAdmin();
+
+    fetchAdminAndPermissions();
   }, []);
+
+  if (loading) {
+    // You can return a skeleton here if you want
+    return null;
+  }
 
   return (
     <Sidebar collapsible='icon'>
@@ -118,7 +179,7 @@ export default function AppSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>Overview</SidebarGroupLabel>
           <SidebarMenu>
-            {navItems.map((item) => {
+            {items.map((item) => {
               const Icon = item.icon ? Icons[item.icon] : Icons.logo;
               return item?.items && item?.items?.length > 0 ? (
                 <Collapsible
@@ -230,14 +291,6 @@ export default function AppSidebar() {
                     <IconUserCircle className='mr-2 h-4 w-4' />
                     Profile
                   </DropdownMenuItem>
-                  {/* <DropdownMenuItem>
-                    <IconCreditCard className='mr-2 h-4 w-4' />
-                    Billing
-                  </DropdownMenuItem> */}
-                  {/* <DropdownMenuItem>
-                    <IconBell className='mr-2 h-4 w-4' />
-                    Notifications
-                  </DropdownMenuItem> */}
                 </DropdownMenuGroup>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem

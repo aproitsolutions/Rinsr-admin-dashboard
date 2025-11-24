@@ -61,7 +61,6 @@ export default function CreateAdminPage() {
     }
   });
 
-  // ✅ Handle Submit
   async function onSubmit(values: AdminFormData) {
     setLoading(true);
     try {
@@ -165,8 +164,10 @@ export default function CreateAdminPage() {
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value='admin'>Admin</SelectItem>
                       <SelectItem value='super_admin'>Super Admin</SelectItem>
+                      <SelectItem value='admin'>Admin</SelectItem>
+                      <SelectItem value='vendor_user'>Vendor User</SelectItem>
+                      <SelectItem value='hub_user'>Hub User</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
