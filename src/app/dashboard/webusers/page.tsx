@@ -146,12 +146,12 @@ export default function WebUsersPage() {
               className='bg-card text-foreground border-input focus:ring-ring max-w-xs'
             />
 
-            <Link
+            {/* <Link
               href='/dashboard/webusers/new'
               className={cn(buttonVariants(), 'text-xs md:text-sm')}
             >
               <IconPlus className='mr-2 h-4 w-4' /> Add New
-            </Link>
+            </Link> */}
           </div>
         </div>
 
