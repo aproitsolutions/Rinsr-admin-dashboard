@@ -37,6 +37,7 @@ interface Hub {
   primary_contact: string;
   secondary_contact?: string;
   vendor_ids?: any[];
+  delivery_partner_ids?: any[];
   createdAt?: string;
 }
 
@@ -68,6 +69,7 @@ export default function HubsPage() {
           primary_contact: h.primary_contact,
           secondary_contact: h.secondary_contact,
           vendor_ids: h.vendor_ids,
+          delivery_partner_ids: h.delivery_partner_ids,
           createdAt: h.createdAt
         }));
 
@@ -145,6 +147,7 @@ export default function HubsPage() {
                 <TableHead>Primary Contact</TableHead>
                 <TableHead>Secondary Contact</TableHead>
                 <TableHead>Vendors</TableHead>
+                <TableHead>Delivery Partners</TableHead>
                 <TableHead className='pr-6 text-right'>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -177,6 +180,12 @@ export default function HubsPage() {
                       {Array.isArray(hub.vendor_ids) &&
                       hub.vendor_ids.length > 0
                         ? `${hub.vendor_ids.length} linked`
+                        : '—'}
+                    </TableCell>
+                    <TableCell>
+                      {Array.isArray(hub.delivery_partner_ids) &&
+                      hub.delivery_partner_ids.length > 0
+                        ? `${hub.delivery_partner_ids.length} linked`
                         : '—'}
                     </TableCell>
                     <TableCell className='flex justify-end gap-2 pr-6'>
@@ -225,7 +234,7 @@ export default function HubsPage() {
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={6}
+                    colSpan={7}
                     className='text-muted-foreground py-10 text-center text-sm'
                   >
                     No hubs found.

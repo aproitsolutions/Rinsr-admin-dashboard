@@ -61,9 +61,11 @@ export default function CreateHubPage() {
   });
 
   const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [deliveryPartners, setDeliveryPartners] = useState<VendorOption[]>([]);
   const [loadingVendors, setLoadingVendors] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [selectedVendorIds, setSelectedVendorIds] = useState<string[]>([]);
+  const [selectedPartnerIds, setSelectedPartnerIds] = useState<string[]>([]);
   const [dialog, setDialog] = useState<{
     open: boolean;
     title: string;
@@ -71,34 +73,54 @@ export default function CreateHubPage() {
     success: boolean;
   }>({ open: false, title: '', message: '', success: false });
 
-  // Fetch vendors for multi-select
+  // Fetch vendors and delivery partners
   useEffect(() => {
-    async function fetchVendors() {
+    async function fetchData() {
       setLoadingVendors(true);
       try {
-        const res = await fetch('/api/vendors');
-        const data = await res.json();
+        const [vendorsRes, partnersRes] = await Promise.all([
+          fetch('/api/vendors'),
+          fetch('/api/delivery-partners')
+        ]);
 
-        const raw =
-          data.vendors ||
-          data.data?.vendors ||
-          (Array.isArray(data) ? data : []) ||
+        const vendorsData = await vendorsRes.json();
+        const partnersData = await partnersRes.json();
+
+        // Process Vendors
+        const rawVendors =
+          vendorsData.vendors ||
+          vendorsData.data?.vendors ||
+          (Array.isArray(vendorsData) ? vendorsData : []) ||
           [];
 
         setVendors(
-          raw.map((v: any) => ({
+          rawVendors.map((v: any) => ({
             _id: v._id,
             company_name: v.company_name || v.companyName || 'Unnamed Vendor'
           }))
         );
+
+        // Process Delivery Partners
+        const rawPartners =
+          partnersData.data ||
+          partnersData.deliveryPartners ||
+          (Array.isArray(partnersData) ? partnersData : []) ||
+          [];
+
+        setDeliveryPartners(
+          rawPartners.map((p: any) => ({
+            _id: p._id,
+            company_name: p.company_name || 'Unnamed Partner'
+          }))
+        );
       } catch (err) {
-        console.error('Failed to fetch vendors:', err);
+        console.error('Failed to fetch data:', err);
       } finally {
         setLoadingVendors(false);
       }
     }
 
-    fetchVendors();
+    fetchData();
   }, []);
 
   const onSubmit = async (data: HubFormData) => {
@@ -106,7 +128,8 @@ export default function CreateHubPage() {
     try {
       const payload = {
         ...data,
-        vendor_ids: selectedVendorIds
+        vendor_ids: selectedVendorIds,
+        delivery_partner_ids: selectedPartnerIds
       };
 
       console.log('FINAL PAYLOAD:', payload);
@@ -129,6 +152,7 @@ export default function CreateHubPage() {
 
         reset();
         setSelectedVendorIds([]);
+        setSelectedPartnerIds([]);
 
         setTimeout(() => router.push('/dashboard/hubs'), 1200);
       } else {
@@ -156,6 +180,14 @@ export default function CreateHubPage() {
       current.includes(vendorId)
         ? current.filter((id) => id !== vendorId)
         : [...current, vendorId]
+    );
+  };
+
+  const togglePartner = (partnerId: string) => {
+    setSelectedPartnerIds((current) =>
+      current.includes(partnerId)
+        ? current.filter((id) => id !== partnerId)
+        : [...current, partnerId]
     );
   };
 
@@ -235,6 +267,7 @@ export default function CreateHubPage() {
                 />
               </div>
 
+              {/* Vendors Selection */}
               <div className='space-y-2'>
                 <Label>Vendors</Label>
 
@@ -288,6 +321,69 @@ export default function CreateHubPage() {
                         <span
                           className='ml-1 cursor-pointer text-red-500'
                           onClick={() => toggleVendor(id)}
+                        >
+                          ×
+                        </span>
+                      </Badge>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Delivery Partners Selection */}
+              <div className='space-y-2'>
+                <Label>Delivery Partners</Label>
+
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant='outline'
+                      className='w-full justify-between'
+                    >
+                      {selectedPartnerIds.length > 0
+                        ? `${selectedPartnerIds.length} partner(s) selected`
+                        : 'Select delivery partners'}
+                      <Icons.cheverondown className='h-4 w-4 opacity-50' />
+                    </Button>
+                  </PopoverTrigger>
+
+                  <PopoverContent className='w-full p-0'>
+                    <Command>
+                      <CommandInput placeholder='Search partners...' />
+                      <CommandEmpty>No partners found.</CommandEmpty>
+
+                      <CommandGroup>
+                        {deliveryPartners.map((partner) => {
+                          const isSelected = selectedPartnerIds.includes(
+                            partner._id
+                          );
+
+                          return (
+                            <CommandItem
+                              key={partner._id}
+                              value={partner.company_name}
+                              onSelect={() => togglePartner(partner._id)}
+                            >
+                              <Checkbox checked={isSelected} className='mr-2' />
+                              {partner.company_name}
+                            </CommandItem>
+                          );
+                        })}
+                      </CommandGroup>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+
+                {/* Selected badges */}
+                <div className='mt-2 flex flex-wrap gap-2'>
+                  {selectedPartnerIds.map((id) => {
+                    const partner = deliveryPartners.find((p) => p._id === id);
+                    return (
+                      <Badge key={id} variant='secondary' className='px-2 py-1'>
+                        {partner?.company_name || 'Partner'}
+                        <span
+                          className='ml-1 cursor-pointer text-red-500'
+                          onClick={() => togglePartner(id)}
                         >
                           ×
                         </span>

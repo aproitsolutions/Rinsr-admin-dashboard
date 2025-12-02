@@ -28,6 +28,7 @@ interface HubFormData {
   primary_contact: string;
   secondary_contact?: string;
   vendor_ids: string[];
+  delivery_partner_ids: string[];
 }
 
 export default function EditHubPage() {
@@ -37,10 +38,16 @@ export default function EditHubPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [vendors, setVendors] = useState<VendorOption[]>([]);
+  const [deliveryPartners, setDeliveryPartners] = useState<VendorOption[]>([]);
   const [vendorSearch, setVendorSearch] = useState('');
+  const [partnerSearch, setPartnerSearch] = useState('');
 
   const filteredVendors = vendors.filter((v) =>
     v.company_name.toLowerCase().includes(vendorSearch.toLowerCase())
+  );
+
+  const filteredPartners = deliveryPartners.filter((p) =>
+    p.company_name.toLowerCase().includes(partnerSearch.toLowerCase())
   );
 
   const [alert, setAlert] = useState<null | {
@@ -54,34 +61,55 @@ export default function EditHubPage() {
     location_coordinates: '',
     primary_contact: '',
     secondary_contact: '',
-    vendor_ids: []
+    vendor_ids: [],
+    delivery_partner_ids: []
   });
 
-  // Fetch vendors for dropdown
+  // Fetch vendors and delivery partners
   useEffect(() => {
-    async function fetchVendors() {
+    async function fetchData() {
       try {
-        const res = await fetch('/api/vendors');
-        const data = await res.json();
+        const [vendorsRes, partnersRes] = await Promise.all([
+          fetch('/api/vendors'),
+          fetch('/api/delivery-partners')
+        ]);
 
-        const raw =
-          data.vendors ||
-          data.data?.vendors ||
-          (Array.isArray(data) ? data : []) ||
+        const vendorsData = await vendorsRes.json();
+        const partnersData = await partnersRes.json();
+
+        // Process Vendors
+        const rawVendors =
+          vendorsData.vendors ||
+          vendorsData.data?.vendors ||
+          (Array.isArray(vendorsData) ? vendorsData : []) ||
           [];
 
-        const opts: VendorOption[] = raw.map((v: any) => ({
-          _id: v._id,
-          company_name: v.company_name || v.companyName || 'Unnamed Vendor'
-        }));
+        setVendors(
+          rawVendors.map((v: any) => ({
+            _id: v._id,
+            company_name: v.company_name || v.companyName || 'Unnamed Vendor'
+          }))
+        );
 
-        setVendors(opts);
+        // Process Delivery Partners
+        const rawPartners =
+          partnersData.data ||
+          partnersData.deliveryPartners ||
+          (Array.isArray(partnersData) ? partnersData : []) ||
+          [];
+
+        setDeliveryPartners(
+          rawPartners.map((p: any) => ({
+            _id: p._id,
+            company_name: p.company_name || 'Unnamed Partner'
+          }))
+        );
       } catch (err) {
-        console.error('Failed to fetch vendors for hubs:', err);
+        console.error('Failed to fetch data:', err);
       }
     }
 
-    fetchVendors();
+    fetchData();
   }, []);
 
   // Fetch hub details
@@ -104,6 +132,12 @@ export default function EditHubPage() {
             vendor_ids: Array.isArray(hub.vendor_ids)
               ? hub.vendor_ids.map((v: any) =>
                   typeof v === 'string' ? v : v?._id
+                )
+              : [],
+            // Normalize delivery_partner_ids
+            delivery_partner_ids: Array.isArray(hub.delivery_partner_ids)
+              ? hub.delivery_partner_ids.map((p: any) =>
+                  typeof p === 'string' ? p : p?._id
                 )
               : []
           });
@@ -191,7 +225,7 @@ export default function EditHubPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
+      <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 p-6'>
         <h1 className='text-foreground text-2xl font-bold'>Edit Hub</h1>
 
         <Card>
@@ -327,6 +361,68 @@ export default function EditHubPage() {
                   ) : (
                     <p className='text-muted-foreground text-sm'>
                       No vendors found.
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              {/* Delivery Partners multi-select */}
+              <div className='space-y-2'>
+                <Label>Delivery Partners (select one or more)</Label>
+
+                {/* Search Input */}
+                <Input
+                  type='text'
+                  placeholder='Search partners...'
+                  value={partnerSearch}
+                  onChange={(e) => setPartnerSearch(e.target.value)}
+                  className='mb-2'
+                />
+
+                <div className='grid max-h-64 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2'>
+                  {filteredPartners.length > 0 ? (
+                    filteredPartners.map((partner) => {
+                      const isChecked = formData.delivery_partner_ids.includes(
+                        partner._id
+                      );
+
+                      return (
+                        <label
+                          key={partner._id}
+                          className='flex cursor-pointer items-center space-x-2 rounded-md border p-2 text-sm'
+                        >
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={() => {
+                              setFormData((prev) => {
+                                const current = prev.delivery_partner_ids;
+
+                                if (isChecked) {
+                                  return {
+                                    ...prev,
+                                    delivery_partner_ids: current.filter(
+                                      (id) => id !== partner._id
+                                    )
+                                  };
+                                } else {
+                                  return {
+                                    ...prev,
+                                    delivery_partner_ids: [
+                                      ...current,
+                                      partner._id
+                                    ]
+                                  };
+                                }
+                              });
+                            }}
+                          />
+                          <span>{partner.company_name}</span>
+                        </label>
+                      );
+                    })
+                  ) : (
+                    <p className='text-muted-foreground text-sm'>
+                      No partners found.
                     </p>
                   )}
                 </div>
