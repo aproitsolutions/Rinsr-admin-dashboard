@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
+import Script from 'next/script';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -21,23 +22,25 @@ interface VendorFormData {
   location: string;
   phone_number: string;
   services: string[];
-  location_coordinates: string; // UPDATED
+  location_coordinates: string;
+}
+
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
 }
 
 export default function VendorForm() {
-  const { register, handleSubmit, reset } = useForm<VendorFormData>({
+  const { register, handleSubmit, setValue, reset } = useForm<VendorFormData>({
     defaultValues: { services: [''] }
   });
 
   const [services, setServices] = useState(['']);
-
-  // NEW — manual coordinates string
-  const [coordsString, setCoordsString] = useState('');
-
-  // LocationIQ autocomplete states
-  const [locationQuery, setLocationQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<any[]>([]);
-  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const autocompleteInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
 
   // Dialog state
   const [dialog, setDialog] = useState<{
@@ -47,40 +50,34 @@ export default function VendorForm() {
     success: boolean;
   }>({ open: false, title: '', message: '', success: false });
 
-  const LOCATIONIQ_KEY = process.env.NEXT_PUBLIC_LOCATIONIQ_KEY;
-
-  // Fetch autocomplete suggestions
+  // Initialize Google Maps Autocomplete
   useEffect(() => {
-    const fetchSuggestions = async () => {
-      if (!locationQuery || locationQuery.length < 3) {
-        setSuggestions([]);
-        return;
-      }
+    if (scriptLoaded && autocompleteInputRef.current && window.google) {
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        autocompleteInputRef.current,
+        { types: ['geocode', 'establishment'] }
+      );
 
-      try {
-        const res = await fetch(
-          `https://api.locationiq.com/v1/autocomplete?key=${LOCATIONIQ_KEY}&q=${encodeURIComponent(
-            locationQuery
-          )}&limit=5`
-        );
-        const data = await res.json();
-        setSuggestions(data);
-        setShowSuggestions(true);
-      } catch (err) {
-        console.error('Error fetching location suggestions:', err);
-      }
-    };
+      autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+    }
+  }, [scriptLoaded]);
 
-    const delay = setTimeout(fetchSuggestions, 500);
-    return () => clearTimeout(delay);
-  }, [locationQuery]);
+  const handlePlaceSelect = () => {
+    const place = autocompleteRef.current.getPlace();
 
-  const handleSelectSuggestion = (item: any) => {
-    setLocationQuery(item.display_name);
-    setShowSuggestions(false);
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const coords = `${lat}, ${lng}`;
 
-    // ❌ DO NOT auto-fill coordinates
-    // ✔ User will enter manually
+      console.log('📍 Selected Place:', place.formatted_address);
+      console.log('📍 Coordinates:', coords);
+
+      setValue('location', place.formatted_address || place.name);
+      setValue('location_coordinates', coords);
+    } else {
+      console.warn('Place details not found for input: ', place.name);
+    }
   };
 
   // Services Management
@@ -97,10 +94,10 @@ export default function VendorForm() {
   const onSubmit = async (data: VendorFormData) => {
     const payload = {
       ...data,
-      location: locationQuery,
-      services,
-      location_coordinates: coordsString // ✔ saved as a string
+      services
     };
+
+    console.log('📤 Submitting Vendor:', payload);
 
     try {
       const res = await fetch('/api/vendors', {
@@ -121,8 +118,9 @@ export default function VendorForm() {
 
         reset();
         setServices(['']);
-        setCoordsString('');
-        setLocationQuery('');
+        if (autocompleteInputRef.current) {
+          autocompleteInputRef.current.value = '';
+        }
       } else {
         setDialog({
           open: true,
@@ -141,8 +139,22 @@ export default function VendorForm() {
     }
   };
 
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsScriptSrc = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+
+  useEffect(() => {
+    // console.log('🗺️ Google Maps API Key:', googleMapsApiKey ? 'Loaded' : 'Missing');
+    // console.log('🔗 Script Source:', googleMapsScriptSrc);
+  }, [googleMapsApiKey, googleMapsScriptSrc]);
+
   return (
     <PageContainer scrollable>
+      <Script
+        src={googleMapsScriptSrc}
+        onLoad={() => setScriptLoaded(true)}
+        strategy='lazyOnload'
+      />
+
       <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
         <h1 className='text-2xl font-bold'>Create Admin</h1>
 
@@ -156,48 +168,28 @@ export default function VendorForm() {
             />
           </div>
 
-          {/* LocationIQ Autocomplete */}
-          <div className='relative'>
+          {/* Google Maps Autocomplete */}
+          <div>
             <Label>Location</Label>
             <Input
-              value={locationQuery}
-              onChange={(e) => setLocationQuery(e.target.value)}
+              {...register('location', { required: true })}
+              ref={(e) => {
+                register('location').ref(e);
+                // @ts-ignore
+                autocompleteInputRef.current = e;
+              }}
               placeholder='Search location...'
-              autoComplete='off'
               className='mt-1'
             />
-
-            {showSuggestions && suggestions.length > 0 && (
-              <ul className='absolute z-10 mt-1 max-h-48 w-full overflow-y-auto rounded-md border bg-white shadow-md'>
-                {suggestions.map((item) => (
-                  <li
-                    key={item.place_id}
-                    onClick={() => handleSelectSuggestion(item)}
-                    className='cursor-pointer p-2 text-sm hover:bg-gray-100'
-                  >
-                    {item.display_name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          {/* Manual Coordinates Input */}
-          <div>
-            <Label>Coordinates (lat, lng)</Label>
-            <Input
-              value={coordsString}
-              onChange={(e) => setCoordsString(e.target.value)}
-              placeholder='10.1234, 76.5678'
-              className='mt-1'
-            />
+            {/* Hidden input for coordinates to ensure it's registered */}
+            <input type='hidden' {...register('location_coordinates')} />
           </div>
 
           <div>
             <Label>Phone Number</Label>
             <Input
               {...register('phone_number', { required: true })}
-              placeholder='+91XXXXXXXXXX'
+              placeholder='+91'
               className='mt-1'
             />
           </div>

@@ -72,6 +72,16 @@ export async function GET(
       order?.vendor_id || order?.vendor || 'not found'
     );
 
+    // ✅ Fix image URL
+    if (order?.image && !order.image.startsWith('http')) {
+      const rootUrl = normalizedBase.replace(/\/api$/, '');
+      // Ensure no double slashes if image starts with /
+      const imagePath = order.image.startsWith('/')
+        ? order.image
+        : `/${order.image}`;
+      order.image = `${rootUrl}${imagePath}`;
+    }
+
     return NextResponse.json({
       success: true,
       order,

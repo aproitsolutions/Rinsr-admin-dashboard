@@ -44,14 +44,15 @@ export default function EditOrderPage() {
   const [vendors, setVendors] = useState<
     { _id: string; company_name: string }[]
   >([]);
+  const [orderImage, setOrderImage] = useState<string | null>(null);
 
   const form = useForm({
     defaultValues: {
       pickup_date: '',
       pickup_time_slot_start: '',
       pickup_time_slot_end: '',
-      address_label: '', // ✅ added
-      address_line: '', // ✅ added
+      address_label: '',
+      address_line: '',
       heavy_items: '',
       status: '',
       vendor_status: '',
@@ -123,6 +124,8 @@ export default function EditOrderPage() {
                   : typeof order.vendor === 'object'
                     ? order.vendor?._id
                     : '';
+
+          setOrderImage(order.image || null);
 
           form.reset({
             pickup_date: order.pickup_date
@@ -220,9 +223,28 @@ export default function EditOrderPage() {
   }
 
   return (
-    <PageContainer scrollable={false}>
+    <PageContainer scrollable={true}>
       <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
         <h1 className='text-foreground text-2xl font-bold'>Edit Order</h1>
+
+        {/* ✅ Display Order Image */}
+        {orderImage && (
+          <div className='mb-4'>
+            <p className='mb-2 text-sm font-medium'>Order Image</p>
+            <div className='relative h-64 w-full max-w-md overflow-hidden rounded-md border'>
+              <img
+                src={
+                  orderImage.startsWith('http') ? orderImage : `/${orderImage}`
+                }
+                alt='Order'
+                className='h-full w-full object-cover'
+                onError={(e) => {
+                  (e.target as HTMLImageElement).style.display = 'none';
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         <Form form={form} onSubmit={form.handleSubmit(onSubmit)}>
           <div className='grid gap-4'>
