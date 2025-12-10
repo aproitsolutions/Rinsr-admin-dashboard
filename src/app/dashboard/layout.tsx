@@ -4,6 +4,8 @@ import Header from '@/components/layout/header';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
+import { UserProvider } from '@/components/layout/user-provider';
+import PermissionGuard from '@/components/layout/permission-guard';
 
 export const metadata: Metadata = {
   title: 'Rinsr Admin Panel',
@@ -20,15 +22,17 @@ export default async function DashboardLayout({
   const defaultOpen = cookieStore.get('sidebar_state')?.value === 'true';
   return (
     <KBar>
-      <SidebarProvider defaultOpen={defaultOpen}>
-        <AppSidebar />
-        <SidebarInset>
-          <Header />
-          {/* page main content */}
-          {children}
-          {/* page main content ends */}
-        </SidebarInset>
-      </SidebarProvider>
+      <UserProvider>
+        <SidebarProvider defaultOpen={defaultOpen}>
+          <AppSidebar />
+          <SidebarInset>
+            <Header />
+            {/* page main content */}
+            <PermissionGuard>{children}</PermissionGuard>
+            {/* page main content ends */}
+          </SidebarInset>
+        </SidebarProvider>
+      </UserProvider>
     </KBar>
   );
 }

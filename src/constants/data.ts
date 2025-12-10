@@ -231,7 +231,14 @@ function hasAccessToUrl(url: string, user: CurrentAdmin): boolean {
   if (!url || url === '#') return true;
 
   // simple rule: any allowed page is a prefix of url
-  return user.allowedPages.some((page) => url.startsWith(page));
+  // BUT special case: '/dashboard' should not match everything under it (like /dashboard/orders)
+  // It should only match itself or overview
+  return user.allowedPages.some((page) => {
+    if (page === '/dashboard') {
+      return url === '/dashboard' || url === '/dashboard/overview';
+    }
+    return url.startsWith(page);
+  });
 }
 
 // no NavItem | null, so no TS error

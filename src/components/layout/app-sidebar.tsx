@@ -29,18 +29,11 @@ import {
   SidebarRail
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import {
-  navItems,
-  filterNavItemsByPermissions,
-  type CurrentAdmin,
-  type UserRole
-} from '@/constants/data';
+import { navItems, filterNavItemsByPermissions } from '@/constants/data';
 import { useMediaQuery } from '@/hooks/use-media-query';
 import {
-  IconBell,
   IconChevronRight,
   IconChevronsDown,
-  IconCreditCard,
   IconLogout,
   IconPhotoUp,
   IconUserCircle
@@ -50,6 +43,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
+import { useUser } from './user-provider';
 
 export const company = {
   name: 'Acme Inc',
@@ -63,17 +57,11 @@ const tenants = [
   { id: '3', name: 'Gamma Ltd' }
 ];
 
-type RawAdmin = {
-  _id: string;
-  name: string;
-  email: string;
-  role: UserRole;
-};
-
 export default function AppSidebar() {
   const pathname = usePathname();
   const { isOpen } = useMediaQuery();
   const router = useRouter();
+  const { admin, loading } = useUser();
 
   const onLogout = async () => {
     try {
@@ -96,70 +84,11 @@ export default function AppSidebar() {
     // Side effects based on sidebar state changes
   }, [isOpen]);
 
-  const [admin, setAdmin] = React.useState<CurrentAdmin | null>(null);
-  const [items, setItems] = React.useState(navItems);
-  const [loading, setLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    async function fetchAdminAndPermissions() {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (!res.ok) {
-          setLoading(false);
-          return;
-        }
-
-        const data = await res.json();
-        if (!(data?.success && data?.admin)) {
-          setLoading(false);
-          return;
-        }
-
-        const raw: RawAdmin = data.admin;
-
-        let allowedPages: string[] = [];
-
-        if (raw.role === 'super_admin') {
-          allowedPages = ['*'];
-        } else {
-          const resPerm = await fetch(`/api/role-permissions/${raw.role}`, {
-            credentials: 'include',
-            cache: 'no-store'
-          });
-
-          if (resPerm.ok) {
-            const permData = await resPerm.json();
-            allowedPages = permData.allowedPages || [];
-          } else {
-            // Fallback so sidebar does NOT become blank
-            allowedPages = [];
-            console.warn(
-              'Permissions API returned error, using fallback empty permissions'
-            );
-          }
-        }
-
-        const curr: CurrentAdmin = {
-          id: raw._id,
-          name: raw.name,
-          email: raw.email,
-          role: raw.role,
-          allowedPages
-        };
-
-        setAdmin(curr);
-
-        const filtered = filterNavItemsByPermissions(curr);
-        setItems(filtered);
-      } catch (err) {
-        console.error('Failed to fetch admin or permissions:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    fetchAdminAndPermissions();
-  }, []);
+  // Derive filtered items from admin permissions
+  const items = React.useMemo(() => {
+    if (!admin) return [];
+    return filterNavItemsByPermissions(admin);
+  }, [admin]);
 
   if (loading) {
     // You can return a skeleton here if you want

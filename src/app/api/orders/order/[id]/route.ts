@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   const orderId = params.id;
-  console.log(` GET /api/orders/order/${orderId}`);
+  // console.log(` GET /api/orders/order/${orderId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -53,7 +53,7 @@ export async function GET(
       data = { raw: rawText };
     }
 
-    console.log(' Upstream GET response:', JSON.stringify(data, null, 2));
+    // console.log(' Upstream GET response:', JSON.stringify(data, null, 2));
 
     if (!upstreamRes.ok) {
       return NextResponse.json(
@@ -67,10 +67,10 @@ export async function GET(
     }
 
     const order = data?.order ?? data?.data ?? data;
-    console.log(
-      ` Order ${orderId} vendor_id:`,
-      order?.vendor_id || order?.vendor || 'not found'
-    );
+    // console.log(
+    //   ` Order ${orderId} vendor_id:`,
+    //   order?.vendor_id || order?.vendor || 'not found'
+    // );
 
     // ✅ Fix image URL
     if (order?.image && !order.image.startsWith('http')) {
@@ -127,10 +127,10 @@ export async function PUT(
 
     const body = await request.json();
 
-    console.log(
-      ` PUT /api/orders/order/${orderId} payload:`,
-      JSON.stringify(body, null, 2)
-    );
+    // console.log(
+    //   ` PUT /api/orders/order/${orderId} payload:`,
+    //   JSON.stringify(body, null, 2)
+    // );
 
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
@@ -166,10 +166,10 @@ export async function PUT(
     }
 
     const updatedOrder = data?.order ?? data?.data ?? data;
-    console.log(
-      ` PUT response vendor_id:`,
-      updatedOrder?.vendor_id || updatedOrder?.vendor || 'not found'
-    );
+    // console.log(
+    //   ` PUT response vendor_id:`,
+    //   updatedOrder?.vendor_id || updatedOrder?.vendor || 'not found'
+    // );
 
     return NextResponse.json({
       success: true,

@@ -17,6 +17,8 @@ import {
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 
+import GoogleMapPicker from '@/components/maps/GoogleMapPicker';
+
 interface VendorFormData {
   company_name: string;
   location: string;
@@ -41,6 +43,13 @@ export default function VendorForm() {
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const autocompleteInputRef = useRef<HTMLInputElement>(null);
   const autocompleteRef = useRef<any>(null);
+  const [mapLocation, setMapLocation] = useState<
+    | {
+        lat: number;
+        lng: number;
+      }
+    | undefined
+  >(undefined);
 
   // Dialog state
   const [dialog, setDialog] = useState<{
@@ -75,9 +84,27 @@ export default function VendorForm() {
 
       setValue('location', place.formatted_address || place.name);
       setValue('location_coordinates', coords);
+      setMapLocation({ lat, lng });
     } else {
       console.warn('Place details not found for input: ', place.name);
     }
+  };
+
+  const handleMapLocationSelect = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    const coords = `${location.lat}, ${location.lng}`;
+    if (location.address) {
+      setValue('location', location.address);
+      // Update autocomplete input value manually
+      if (autocompleteInputRef.current) {
+        autocompleteInputRef.current.value = location.address;
+      }
+    }
+    setValue('location_coordinates', coords);
+    setMapLocation({ lat: location.lat, lng: location.lng });
   };
 
   // Services Management
@@ -118,6 +145,7 @@ export default function VendorForm() {
 
         reset();
         setServices(['']);
+        setMapLocation(undefined);
         if (autocompleteInputRef.current) {
           autocompleteInputRef.current.value = '';
         }
@@ -183,6 +211,14 @@ export default function VendorForm() {
             />
             {/* Hidden input for coordinates to ensure it's registered */}
             <input type='hidden' {...register('location_coordinates')} />
+
+            <div className='mt-2'>
+              <Label>Select on Map</Label>
+              <GoogleMapPicker
+                initialLocation={mapLocation}
+                onLocationSelect={handleMapLocationSelect}
+              />
+            </div>
           </div>
 
           <div>

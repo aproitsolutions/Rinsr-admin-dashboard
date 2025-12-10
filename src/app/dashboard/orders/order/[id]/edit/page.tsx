@@ -362,12 +362,18 @@ export default function EditOrderPage() {
                         <SelectItem value='vendor_picked_up'>
                           Vendor Picked Up
                         </SelectItem>
-                        <SelectItem value='ready'>
-                          Ready to Pickup from vendor
+                        <SelectItem value='vendor_returning'>
+                          Vendor Returning
                         </SelectItem>
+                        <SelectItem value='ready'>Ready to deliver</SelectItem>
+
                         <SelectItem value='out_for_delivery'>
                           Out for Delivery
                         </SelectItem>
+                        <SelectItem value='service_completed'>
+                          Service Completed
+                        </SelectItem>
+                        <SelectItem value='washing'>Washing</SelectItem>
                         <SelectItem value='delivered'>Delivered</SelectItem>
                         <SelectItem value='cancelled'>Cancelled</SelectItem>
                       </SelectContent>

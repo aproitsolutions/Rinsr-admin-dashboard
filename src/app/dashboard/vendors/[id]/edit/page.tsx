@@ -1,12 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import Script from 'next/script';
+import GoogleMapPicker from '@/components/maps/GoogleMapPicker';
 
 import {
   AlertDialog,
@@ -14,6 +16,13 @@ import {
   AlertDialogTitle,
   AlertDialogDescription
 } from '@/components/ui/alert-dialog';
+
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
 
 export default function EditVendorPage() {
   const { id } = useParams();
@@ -35,6 +44,79 @@ export default function EditVendorPage() {
     location_coordinates: ''
   });
 
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const autocompleteInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+  const [mapLocation, setMapLocation] = useState<
+    | {
+        lat: number;
+        lng: number;
+      }
+    | undefined
+  >(undefined);
+
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsScriptSrc = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+
+  // Initialize Google Maps Autocomplete
+  useEffect(() => {
+    if (scriptLoaded && autocompleteInputRef.current && window.google) {
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        autocompleteInputRef.current,
+        { types: ['geocode', 'establishment'] }
+      );
+
+      autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+    }
+  }, [scriptLoaded, loading]);
+
+  const handlePlaceSelect = () => {
+    const place = autocompleteRef.current.getPlace();
+
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const coords = `${lat}, ${lng}`;
+
+      console.log('📍 Selected Place:', place.formatted_address);
+      console.log('📍 Coordinates:', coords);
+
+      setFormData((prev) => ({
+        ...prev,
+        location: place.formatted_address || place.name,
+        location_coordinates: coords
+      }));
+      setMapLocation({ lat, lng });
+    } else {
+      console.warn('Place details not found for input: ', place.name);
+    }
+  };
+
+  const handleMapLocationSelect = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    const coords = `${location.lat}, ${location.lng}`;
+    if (location.address) {
+      setFormData((prev) => ({
+        ...prev,
+        location: location.address,
+        location_coordinates: coords
+      }));
+      // Update autocomplete input value manually
+      if (autocompleteInputRef.current) {
+        autocompleteInputRef.current.value = location.address;
+      }
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        location_coordinates: coords
+      }));
+    }
+    setMapLocation({ lat: location.lat, lng: location.lng });
+  };
+
   // Fetch vendor details
   useEffect(() => {
     async function fetchVendor() {
@@ -53,6 +135,16 @@ export default function EditVendorPage() {
               : [''],
             location_coordinates: data.vendor.location_coordinates || ''
           });
+
+          // Set initial map location if coordinates exist
+          if (data.vendor.location_coordinates) {
+            const [lat, lng] = data.vendor.location_coordinates
+              .split(',')
+              .map((c: string) => parseFloat(c.trim()));
+            if (!isNaN(lat) && !isNaN(lng)) {
+              setMapLocation({ lat, lng });
+            }
+          }
         } else {
           setAlert({ success: false, message: 'Vendor not found' });
         }
@@ -130,6 +222,11 @@ export default function EditVendorPage() {
 
   return (
     <>
+      <Script
+        src={googleMapsScriptSrc}
+        onLoad={() => setScriptLoaded(true)}
+        strategy='lazyOnload'
+      />
       {/* Alert Dialog */}
       <AlertDialog open={!!alert} onOpenChange={() => setAlert(null)}>
         <AlertDialogContent>
@@ -182,24 +279,23 @@ export default function EditVendorPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, location: e.target.value })
                   }
+                  ref={autocompleteInputRef}
+                  placeholder='Search location...'
                   required
                 />
-              </div>
-
-              {/* Coordinates */}
-              <div className='space-y-2'>
-                <Label htmlFor='coords'>Coordinates (lat, lng)</Label>
-                <Input
-                  id='coords'
+                <input
+                  type='hidden'
                   value={formData.location_coordinates}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      location_coordinates: e.target.value
-                    })
-                  }
-                  placeholder='10.1234, 76.5678'
+                  name='location_coordinates'
                 />
+
+                <div className='mt-2'>
+                  <Label>Select on Map</Label>
+                  <GoogleMapPicker
+                    initialLocation={mapLocation}
+                    onLocationSelect={handleMapLocationSelect}
+                  />
+                </div>
               </div>
 
               {/* Phone Number */}

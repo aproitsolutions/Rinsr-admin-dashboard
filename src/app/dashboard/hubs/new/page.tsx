@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import PageContainer from '@/components/layout/page-container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -34,6 +34,8 @@ import {
 
 import { Badge } from '@/components/ui/badge';
 import { Icons } from '@/components/icons';
+import Script from 'next/script';
+import GoogleMapPicker from '@/components/maps/GoogleMapPicker';
 
 interface VendorOption {
   _id: string;
@@ -48,9 +50,16 @@ interface HubFormData {
   secondary_contact?: string;
 }
 
+declare global {
+  interface Window {
+    google: any;
+    initMap: () => void;
+  }
+}
+
 export default function CreateHubPage() {
   const router = useRouter();
-  const { register, handleSubmit, reset } = useForm<HubFormData>({
+  const { register, handleSubmit, reset, setValue } = useForm<HubFormData>({
     defaultValues: {
       name: '',
       location: '',
@@ -72,6 +81,68 @@ export default function CreateHubPage() {
     message: string;
     success: boolean;
   }>({ open: false, title: '', message: '', success: false });
+
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const autocompleteInputRef = useRef<HTMLInputElement>(null);
+  const autocompleteRef = useRef<any>(null);
+  const [mapLocation, setMapLocation] = useState<
+    | {
+        lat: number;
+        lng: number;
+      }
+    | undefined
+  >(undefined);
+
+  const googleMapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+  const googleMapsScriptSrc = `https://maps.googleapis.com/maps/api/js?key=${googleMapsApiKey}&libraries=places`;
+
+  // Initialize Google Maps Autocomplete
+  useEffect(() => {
+    if (scriptLoaded && autocompleteInputRef.current && window.google) {
+      autocompleteRef.current = new window.google.maps.places.Autocomplete(
+        autocompleteInputRef.current,
+        { types: ['geocode', 'establishment'] }
+      );
+
+      autocompleteRef.current.addListener('place_changed', handlePlaceSelect);
+    }
+  }, [scriptLoaded]);
+
+  const handlePlaceSelect = () => {
+    const place = autocompleteRef.current.getPlace();
+
+    if (place.geometry && place.geometry.location) {
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+      const coords = `${lat}, ${lng}`;
+
+      console.log('📍 Selected Place:', place.formatted_address);
+      console.log('📍 Coordinates:', coords);
+
+      setValue('location', place.formatted_address || place.name);
+      setValue('location_coordinates', coords);
+      setMapLocation({ lat, lng });
+    } else {
+      console.warn('Place details not found for input: ', place.name);
+    }
+  };
+
+  const handleMapLocationSelect = (location: {
+    lat: number;
+    lng: number;
+    address: string;
+  }) => {
+    const coords = `${location.lat}, ${location.lng}`;
+    if (location.address) {
+      setValue('location', location.address);
+      // Update autocomplete input value manually
+      if (autocompleteInputRef.current) {
+        autocompleteInputRef.current.value = location.address;
+      }
+    }
+    setValue('location_coordinates', coords);
+    setMapLocation({ lat: location.lat, lng: location.lng });
+  };
 
   // Fetch vendors and delivery partners
   useEffect(() => {
@@ -153,6 +224,10 @@ export default function CreateHubPage() {
         reset();
         setSelectedVendorIds([]);
         setSelectedPartnerIds([]);
+        setMapLocation(undefined);
+        if (autocompleteInputRef.current) {
+          autocompleteInputRef.current.value = '';
+        }
 
         setTimeout(() => router.push('/dashboard/hubs'), 1200);
       } else {
@@ -193,6 +268,11 @@ export default function CreateHubPage() {
 
   return (
     <PageContainer>
+      <Script
+        src={googleMapsScriptSrc}
+        onLoad={() => setScriptLoaded(true)}
+        strategy='lazyOnload'
+      />
       <AlertDialog
         open={dialog.open}
         onOpenChange={(open) => setDialog({ ...dialog, open })}
@@ -236,17 +316,22 @@ export default function CreateHubPage() {
                 <Input
                   id='location'
                   {...register('location', { required: true })}
-                  placeholder='City, Area'
+                  ref={(e) => {
+                    register('location').ref(e);
+                    // @ts-ignore
+                    autocompleteInputRef.current = e;
+                  }}
+                  placeholder='Search location...'
                 />
-              </div>
+                <input type='hidden' {...register('location_coordinates')} />
 
-              <div className='space-y-2'>
-                <Label htmlFor='coords'>Location Coordinates</Label>
-                <Input
-                  id='coords'
-                  {...register('location_coordinates')}
-                  placeholder='10.1234, 76.5678'
-                />
+                <div className='mt-2'>
+                  <Label>Select on Map</Label>
+                  <GoogleMapPicker
+                    initialLocation={mapLocation}
+                    onLocationSelect={handleMapLocationSelect}
+                  />
+                </div>
               </div>
 
               <div className='space-y-2'>
