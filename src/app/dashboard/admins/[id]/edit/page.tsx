@@ -34,14 +34,33 @@ import {
 } from '@/components/ui/alert-dialog';
 
 // ✅ Zod schema
-const adminSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  email: z.string().email('Enter a valid email'),
-  role: z.string().min(1, 'Role is required'),
-  is_active: z.boolean().default(true)
-});
+const adminSchema = z
+  .object({
+    name: z.string().min(1, 'Name is required'),
+    email: z.string().email('Enter a valid email'),
+    role: z.string().min(1, 'Role is required'),
+    is_active: z.boolean().default(true),
+    hub_id: z.string().optional()
+  })
+  .refine(
+    (data) => {
+      if (data.role === 'hub_user') {
+        return !!data.hub_id && data.hub_id.trim() !== '';
+      }
+      return true;
+    },
+    {
+      message: 'Hub is required for Hub Users',
+      path: ['hub_id']
+    }
+  );
 
 type AdminFormData = z.infer<typeof adminSchema>;
+
+interface Hub {
+  _id: string;
+  name: string;
+}
 
 export default function EditAdminPage() {
   const router = useRouter();
@@ -53,6 +72,22 @@ export default function EditAdminPage() {
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
+  const [hubs, setHubs] = useState<Hub[]>([]);
+
+  useEffect(() => {
+    async function fetchHubs() {
+      try {
+        const res = await fetch('/api/hubs');
+        const data = await res.json();
+        if (data.success && Array.isArray(data.hubs)) {
+          setHubs(data.hubs);
+        }
+      } catch (err) {
+        console.error('Failed to fetch hubs', err);
+      }
+    }
+    fetchHubs();
+  }, []);
 
   const form = useForm<AdminFormData>({
     resolver: zodResolver(adminSchema),
@@ -60,7 +95,8 @@ export default function EditAdminPage() {
       name: '',
       email: '',
       role: '',
-      is_active: true
+      is_active: true,
+      hub_id: ''
     }
   });
 
@@ -75,7 +111,8 @@ export default function EditAdminPage() {
             name: a.name || '',
             email: a.email || '',
             role: a.role || '',
-            is_active: a.is_active ?? true
+            is_active: a.is_active ?? true,
+            hub_id: a.hub_id || ''
           });
         } else {
           setAlertMessage('Failed to load admin.');
@@ -187,6 +224,32 @@ export default function EditAdminPage() {
                       <SelectItem value='admin'>Admin</SelectItem>
                       <SelectItem value='vendor_user'>Vendor User</SelectItem>
                       <SelectItem value='hub_user'>Hub User</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Hub Selection */}
+            <FormField
+              control={form.control}
+              name='hub_id'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Hub (Optional)</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder='Select Hub' />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {hubs.map((hub) => (
+                        <SelectItem key={hub._id} value={hub._id}>
+                          {hub.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage />

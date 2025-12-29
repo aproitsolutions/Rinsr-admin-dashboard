@@ -20,6 +20,7 @@ export async function GET(request: NextRequest) {
     const user_status = searchParams.get('user_status') || '';
     const vendor_id = searchParams.get('vendor_id') || '';
     const service_id = searchParams.get('service_id') || '';
+    const hub_id = searchParams.get('hub_id') || '';
 
     const baseUrl = process.env.RINSR_API_BASE;
     const cookieToken = (await cookies()).get('rinsr_token')?.value;
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
     if (user_status) upstreamUrl.searchParams.set('user_status', user_status);
     if (vendor_id) upstreamUrl.searchParams.set('vendor_id', vendor_id);
     if (service_id) upstreamUrl.searchParams.set('service_id', service_id);
+    if (hub_id) upstreamUrl.searchParams.set('hub_id', hub_id);
     // Fetch upstream API
     console.log('🔗 Fetching Upstream Orders URL:', upstreamUrl.toString());
     const upstreamRes = await fetch(upstreamUrl, {

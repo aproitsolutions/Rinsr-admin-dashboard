@@ -14,6 +14,7 @@ export interface GetOrdersParams {
   user_status?: string;
   vendor_id?: string;
   service_id?: string;
+  hub_id?: string;
 }
 
 export interface CreateOrderParams {
@@ -58,7 +59,8 @@ export async function getOrders(
     status = '',
     user_status = '',
     vendor_id = '',
-    service_id = ''
+    service_id = '',
+    hub_id = ''
   } = params;
 
   const queryParams = new URLSearchParams({
@@ -68,7 +70,8 @@ export async function getOrders(
     ...(status && { status }),
     ...(user_status && { user_status }),
     ...(vendor_id && { vendor_id }),
-    ...(service_id && { service_id })
+    ...(service_id && { service_id }),
+    ...(hub_id && { hub_id })
   });
 
   const response = await fetch(`${API_BASE_URL}/orders?${queryParams}`, {

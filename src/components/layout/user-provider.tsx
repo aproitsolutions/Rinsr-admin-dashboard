@@ -69,7 +69,8 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         name: raw.name,
         email: raw.email,
         role: raw.role as UserRole,
-        allowedPages
+        allowedPages,
+        hub_id: raw.hub_id
       });
     } catch (err) {
       console.error('Failed to fetch admin or permissions:', err);

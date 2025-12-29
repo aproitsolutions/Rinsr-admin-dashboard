@@ -221,6 +221,7 @@ export interface CurrentAdmin {
   email: string;
   role: UserRole;
   allowedPages: string[]; // ['*'] means all pages
+  hub_id?: string;
 }
 
 function hasAccessToUrl(url: string, user: CurrentAdmin): boolean {

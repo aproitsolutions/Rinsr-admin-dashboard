@@ -41,8 +41,10 @@ interface OrdersPageProps {
 }
 
 import { Checkbox } from '@/components/ui/checkbox';
+import { useUser } from '@/components/layout/user-provider';
 
 export default function OrdersPage({ className }: OrdersPageProps) {
+  const { admin } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -106,7 +108,8 @@ export default function OrdersPage({ className }: OrdersPageProps) {
           page: pageIndex,
           limit: perPage,
           user_status: userStatusFilter === 'all' ? '' : userStatusFilter,
-          search
+          search,
+          hub_id: admin?.role === 'hub_user' ? admin.hub_id : undefined
         });
 
         if (response.success && Array.isArray(response.data)) {
@@ -386,7 +389,9 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 <TableHead className='text-foreground/80'>
                   User Status
                 </TableHead>
-                <TableHead className='text-foreground/80'>Hub</TableHead>
+                {admin?.role !== 'hub_user' && (
+                  <TableHead className='text-foreground/80'>Hub</TableHead>
+                )}
                 <TableHead className='text-foreground/80 pr-6 text-right'>
                   Actions
                 </TableHead>
@@ -464,18 +469,24 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                       </TableCell>
                       <TableCell>{order.status || '—'}</TableCell>
                       <TableCell>{order.user_status || '—'}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const hub = order.hub_id || order.hub;
-                          if (typeof hub === 'object' && hub?.name) {
-                            return hub.name;
-                          }
-                          if (typeof hub === 'string') {
-                            return hub;
-                          }
-                          return '—';
-                        })()}
-                      </TableCell>
+                      {/* Hide Hub column for hub_user if desired, OR just show it.
+                          If we want to hide it completely, we need to hide the Header too.
+                          For now, let's keep it visible so they confirm it's THEIR hub.
+                       */}
+                      {admin?.role !== 'hub_user' && (
+                        <TableCell>
+                          {(() => {
+                            const hub = order.hub_id || order.hub;
+                            if (typeof hub === 'object' && hub?.name) {
+                              return hub.name;
+                            }
+                            if (typeof hub === 'string') {
+                              return hub;
+                            }
+                            return '—';
+                          })()}
+                        </TableCell>
+                      )}
 
                       <TableCell className='space-x-2 pr-6 text-right'>
                         <Link href={`/dashboard/orders/order/${order.id}/edit`}>

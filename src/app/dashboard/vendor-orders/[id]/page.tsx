@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Loader2 } from 'lucide-react';
 
 interface VendorRef {
   _id: string;
@@ -53,6 +54,7 @@ export default function VendorOrderDetailsPage({
   const { id } = use(params);
   const [order, setOrder] = useState<VendorOrder | null>(null);
   const [loading, setLoading] = useState(true);
+  const [statusUpdating, setStatusUpdating] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -100,6 +102,7 @@ export default function VendorOrderDetailsPage({
   const handleStatusChange = async (newStatus: string) => {
     if (!order) return;
 
+    setStatusUpdating(true);
     try {
       console.log(`Updating status to ${newStatus}`);
       const res = await fetch(`/api/vendor-orders/${order._id}/status`, {
@@ -117,6 +120,8 @@ export default function VendorOrderDetailsPage({
       }
     } catch (error) {
       console.error('Error updating status:', error);
+    } finally {
+      setStatusUpdating(false);
     }
   };
 
@@ -188,9 +193,17 @@ export default function VendorOrderDetailsPage({
                 <Select
                   value={order.vendor_status}
                   onValueChange={handleStatusChange}
+                  disabled={statusUpdating}
                 >
                   <SelectTrigger className='h-8 w-[180px]'>
-                    <SelectValue placeholder='Select status' />
+                    {statusUpdating ? (
+                      <div className='flex items-center gap-2'>
+                        <Loader2 className='h-3 w-3 animate-spin' />
+                        <span className='text-xs'>Updating...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder='Select status' />
+                    )}
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='requested'>Requested</SelectItem>

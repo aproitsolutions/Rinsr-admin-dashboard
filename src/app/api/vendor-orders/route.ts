@@ -25,7 +25,17 @@ export async function GET(req: NextRequest) {
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    const upstreamRes = await fetch(`${normalizedBase}/vendor-orders`, {
+    // Build upstream URL
+    const upstreamUrl = new URL(`${normalizedBase}/vendor-orders`);
+
+    // Append all search parameters from the incoming request
+    req.nextUrl.searchParams.forEach((value, key) => {
+      upstreamUrl.searchParams.append(key, value);
+    });
+
+    console.log('🔗 Proxying Vendor Orders to:', upstreamUrl.toString());
+
+    const upstreamRes = await fetch(upstreamUrl.toString(), {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,

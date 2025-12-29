@@ -23,6 +23,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 
+import { useUser } from '@/components/layout/user-provider';
+
 interface VendorRef {
   _id: string;
   company_name: string;
@@ -41,6 +43,7 @@ interface VendorOrder {
 }
 
 export default function VendorOrdersPage() {
+  const { admin } = useUser();
   const [vendorOrders, setVendorOrders] = useState<VendorOrder[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -52,7 +55,12 @@ export default function VendorOrdersPage() {
     async function fetchVendorOrders() {
       setLoading(true);
       try {
-        const res = await fetch('/api/vendor-orders');
+        const queryParams = new URLSearchParams();
+        if (admin?.role === 'hub_user' && admin?.hub_id) {
+          queryParams.append('hub_id', admin.hub_id);
+        }
+
+        const res = await fetch(`/api/vendor-orders?${queryParams.toString()}`);
         const data = await res.json();
         console.log('Vendor Orders Data type:', typeof data);
         console.log('Is Array?', Array.isArray(data));
@@ -78,7 +86,7 @@ export default function VendorOrdersPage() {
     }
 
     fetchVendorOrders();
-  }, []);
+  }, [admin?.hub_id, admin?.role]);
 
   const filteredOrders = useMemo(() => {
     if (!search.trim()) return vendorOrders;
