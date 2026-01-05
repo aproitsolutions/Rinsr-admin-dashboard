@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: orderId } = await params;
-  // console.log(` GET /api/orders/order/${orderId}`);
+  console.log(` GET /api/orders/order/${orderId}`);
 
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -46,6 +46,7 @@ export async function GET(
     });
 
     const rawText = await upstreamRes.text();
+
     let data: any;
     try {
       data = JSON.parse(rawText);
@@ -53,16 +54,82 @@ export async function GET(
       data = { raw: rawText };
     }
 
-    // console.log(' Upstream GET response:', JSON.stringify(data, null, 2));
+    // Handle soft-failures (200 OK but success: false in body)
+    if (
+      !upstreamRes.ok ||
+      (data && typeof data.success === 'boolean' && !data.success)
+    ) {
+      console.log(
+        '[DEBUG] Direct fetch failed. Attempting Fallback via List API...'
+      );
 
-    if (!upstreamRes.ok) {
+      // Fallback: Fetch list and find the order
+      // This helps if the single-fetch endpoint is stricter than the list endpoint for Hub Users.
+      try {
+        const listUrl = `${normalizedBase}/orders?limit=500`; // Fetch recent 500 orders
+        const listRes = await fetch(listUrl, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            Accept: 'application/json'
+          },
+          cache: 'no-store'
+        });
+
+        const listData = await listRes.json();
+        const rawItems = Array.isArray(listData)
+          ? listData
+          : Array.isArray(listData?.data)
+            ? listData.data
+            : Array.isArray(listData?.orders)
+              ? listData.orders
+              : [];
+
+        const foundItem = rawItems.find(
+          (item: any) =>
+            String(item._id) === String(orderId) ||
+            String(item.id) === String(orderId)
+        );
+
+        if (foundItem) {
+          console.log('✅ Found order in Fallback List API!');
+          console.log('[DEBUG] Fallback Item Keys:', Object.keys(foundItem));
+          console.log(
+            '[DEBUG] Fallback Item Weight:',
+            foundItem.used_weight_kg
+          );
+          // Normalize/Fix image if needed
+          if (foundItem?.image && !foundItem.image.startsWith('http')) {
+            const rootUrl = normalizedBase.replace(/\/api$/, '');
+            const imagePath = foundItem.image.startsWith('/')
+              ? foundItem.image
+              : `/${foundItem.image}`;
+            foundItem.image = `${rootUrl}${imagePath}`;
+          }
+
+          console.log(
+            '[DEBUG] Fallback Item Full:',
+            JSON.stringify(foundItem, null, 2)
+          );
+
+          return NextResponse.json({
+            success: true,
+            order: foundItem,
+            data: foundItem
+          });
+        }
+      } catch (fallbackErr) {
+        console.warn('Fallback fetch also failed:', fallbackErr);
+      }
+
+      console.log('[DEBUG] Fallback failed. Returning original error.');
       return NextResponse.json(
         {
           success: false,
-          message: data?.message || 'Order not found',
-          error: rawText
+          message: data?.message || 'Order not found (Upstream)',
+          error: data
         },
-        { status: upstreamRes.status }
+        { status: upstreamRes.ok ? 404 : upstreamRes.status }
       );
     }
 
@@ -82,11 +149,17 @@ export async function GET(
       order.image = `${rootUrl}${imagePath}`;
     }
 
-    return NextResponse.json({
+    const responsePayload = {
       success: true,
       order,
       data: order
-    });
+    };
+    console.log(
+      'Final API Response Body:',
+      JSON.stringify(responsePayload, null, 2)
+    );
+
+    return NextResponse.json(responsePayload);
   } catch (err) {
     console.error(' GET error:', err);
     return NextResponse.json(
@@ -155,6 +228,42 @@ export async function PUT(
     }
 
     if (!upstreamRes.ok) {
+      console.error(
+        `❌ Upstream PUT failed: ${upstreamRes.status} ${upstreamRes.statusText}`
+      );
+
+      // Fallback: Try PATCH if PUT fails (RBAC might allow PATCH but not PUT)
+      if (upstreamRes.status === 404 || upstreamRes.status === 403) {
+        console.log('🔄 Attempting fallback to PATCH...');
+        try {
+          const patchRes = await fetch(`${normalizedBase}/orders/${orderId}`, {
+            method: 'PATCH',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(body)
+          });
+
+          if (patchRes.ok) {
+            const patchData = await patchRes.json();
+            console.log('✅ Fallback PATCH succeeded!');
+            return NextResponse.json({
+              success: true,
+              message: 'Order updated successfully (via PATCH)',
+              order: patchData?.order ?? patchData?.data ?? patchData,
+              data: patchData
+            });
+          } else {
+            console.warn(`⚠️ Fallback PATCH also failed: ${patchRes.status}`);
+          }
+        } catch (patchErr) {
+          console.error('⚠️ Fallback PATCH error:', patchErr);
+        }
+      }
+
+      console.error('Response Body:', JSON.stringify(data, null, 2));
       return NextResponse.json(
         {
           success: false,

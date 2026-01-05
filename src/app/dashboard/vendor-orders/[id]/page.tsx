@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, use } from 'react';
+import React, { useEffect, useState } from 'react';
 import PageContainer from '@/components/layout/page-container';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -21,7 +21,7 @@ import {
   TableHeader,
   TableRow
 } from '@/components/ui/table';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 interface VendorRef {
@@ -46,56 +47,64 @@ interface VendorOrder {
   updatedAt: string;
 }
 
-export default function VendorOrderDetailsPage({
-  params
-}: {
-  params: Promise<{ id: string }>;
-}) {
-  const { id } = use(params);
+export default function VendorOrderDetailsPage() {
+  const params = useParams();
+  const id = params?.id as string;
   const [order, setOrder] = useState<VendorOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [statusUpdating, setStatusUpdating] = useState(false);
   const router = useRouter();
 
+  // Reassign State
+  const [vendors, setVendors] = useState<
+    { _id: string; companyName: string }[]
+  >([]);
+  const [selectedVendor, setSelectedVendor] = useState<string>('');
+  const [isReassigning, setIsReassigning] = useState(false);
+
   useEffect(() => {
-    async function fetchOrder() {
+    async function fetchData() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/vendor-orders/${id}`);
-        const data = await res.json();
-        console.log('Single Vendor Order Data:', data);
+        // Fetch Vendor Order Details
+        const resOrder = await fetch(`/api/vendor-orders/${id}`);
+        const dataOrder = await resOrder.json();
 
-        // Handle varied response structures
         let foundOrder: VendorOrder | null = null;
-        if (data && data._id) {
-          foundOrder = data;
-        } else if (data.data && data.data._id) {
-          foundOrder = data.data;
-        } else if (data.vendorOrder && data.vendorOrder._id) {
-          foundOrder = data.vendorOrder;
-        } else if (data.vendor_order && data.vendor_order._id) {
-          foundOrder = data.vendor_order;
-        }
-
-        // If specific order not found in structure, assume it might be in a list if API returned array
-        if (!foundOrder && Array.isArray(data)) {
-          foundOrder = data.find((o: any) => o._id === id) || null;
+        if (dataOrder && dataOrder._id) {
+          foundOrder = dataOrder;
+        } else if (dataOrder.data && dataOrder.data._id) {
+          foundOrder = dataOrder.data;
+        } else if (dataOrder.vendorOrder && dataOrder.vendorOrder._id) {
+          foundOrder = dataOrder.vendorOrder;
+        } else if (dataOrder.vendor_order && dataOrder.vendor_order._id) {
+          foundOrder = dataOrder.vendor_order;
         }
 
         if (foundOrder) {
           setOrder(foundOrder);
-        } else {
-          console.error('Order not found in response:', data);
         }
+
+        // Fetch List of Vendors (for reassignment)
+        const resVendors = await fetch('/api/vendors', { cache: 'no-store' });
+        const dataVendors = await resVendors.json();
+        const rawVendors =
+          dataVendors.data?.vendors || dataVendors.vendors || [];
+        setVendors(
+          rawVendors.map((v: any) => ({
+            _id: v._id,
+            companyName: v.company_name || v.companyName || 'Unknown Vendor'
+          }))
+        );
       } catch (error) {
-        console.error('Error fetching vendor order:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
 
     if (id) {
-      fetchOrder();
+      fetchData();
     }
   }, [id]);
 
@@ -104,7 +113,6 @@ export default function VendorOrderDetailsPage({
 
     setStatusUpdating(true);
     try {
-      console.log(`Updating status to ${newStatus}`);
       const res = await fetch(`/api/vendor-orders/${order._id}/status`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -115,13 +123,56 @@ export default function VendorOrderDetailsPage({
         setOrder((prev: any) =>
           prev ? { ...prev, vendor_status: newStatus } : null
         );
+        toast.success(`Status updated to ${newStatus}`);
       } else {
-        console.error('Failed to update status');
+        toast.error('Failed to update status');
       }
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error(error);
+      toast.error('Error updating status');
     } finally {
       setStatusUpdating(false);
+    }
+  };
+
+  const handleReassign = async () => {
+    if (!selectedVendor || !order) return;
+
+    // Get list of Order IDs from the current Vendor Order
+    const orderIds =
+      order.order_ids?.map((o: any) => (typeof o === 'string' ? o : o._id)) ||
+      [];
+
+    if (orderIds.length === 0) {
+      toast.warning('No valid orders found in this group to reassign.');
+      return;
+    }
+
+    setIsReassigning(true);
+    try {
+      const response = await fetch('/api/vendor-orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          vendor_id: selectedVendor,
+          order_ids: orderIds
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        toast.success('Orders successfully reassigned to new vendor!');
+        // Optional: Redirect to the new vendor list or stay here
+        router.push('/dashboard/vendor-orders');
+      } else {
+        toast.error(data.message || 'Failed to reassign orders');
+      }
+    } catch (error) {
+      console.error('Reassign error', error);
+      toast.error('Failed to reassign orders');
+    } finally {
+      setIsReassigning(false);
     }
   };
 
@@ -215,6 +266,7 @@ export default function VendorOrderDetailsPage({
                     <SelectItem value='preparing_for_dispatch'>
                       Preparing for Dispatch
                     </SelectItem>
+                    <SelectItem value='dispatched'>Dispatched</SelectItem>
                     <SelectItem value='ready_to_deliver'>
                       Ready to Deliver
                     </SelectItem>
@@ -247,6 +299,51 @@ export default function VendorOrderDetailsPage({
             </CardContent>
           </Card>
         </div>
+
+        {/* Reassign Section */}
+        <Card className='w-full border-orange-200 bg-orange-50/50 dark:border-orange-900 dark:bg-orange-950/20'>
+          <CardHeader>
+            <CardTitle className='text-orange-700 dark:text-orange-400'>
+              Actions
+            </CardTitle>
+            <CardDescription>
+              Reassign these orders to a different vendor (e.g., if declined).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className='flex items-end gap-4'>
+            <div className='flex-1 space-y-2'>
+              <label className='text-sm font-medium'>Select New Vendor</label>
+              <Select value={selectedVendor} onValueChange={setSelectedVendor}>
+                <SelectTrigger>
+                  <SelectValue placeholder='Select vendor...' />
+                </SelectTrigger>
+                <SelectContent>
+                  {vendors
+                    .filter((v) => v._id !== order.vendor_id?._id) // Exclude current
+                    .map((v) => (
+                      <SelectItem key={v._id} value={v._id}>
+                        {v.companyName}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              onClick={handleReassign}
+              disabled={!selectedVendor || isReassigning}
+              className='bg-orange-600 text-white hover:bg-orange-700'
+            >
+              {isReassigning ? (
+                <>
+                  <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  Reassigning...
+                </>
+              ) : (
+                'Reassign Orders'
+              )}
+            </Button>
+          </CardContent>
+        </Card>
 
         <Card className='w-full'>
           <CardHeader>

@@ -132,6 +132,17 @@ export async function GET(request: NextRequest) {
       const id =
         item._id ?? item.id ?? item.order_id ?? String(item.uuid ?? '');
 
+      if (rawItems.indexOf(item) === 0) {
+        console.log(
+          '[DEBUG] First Upstream List Item Keys:',
+          Object.keys(item)
+        );
+        console.log(
+          '[DEBUG] First Upstream List Item Weight:',
+          item.used_weight_kg
+        );
+      }
+
       // ✅ Plan Name
       const plan_name =
         item.subscription_snapshot?.plan_name ??
@@ -183,7 +194,10 @@ export async function GET(request: NextRequest) {
         hub_id,
         status,
         user_status: item.user_status || null,
-        service_id: item.service_id?._id ?? item.service_id ?? null
+        vendor_status: item.vendor_status || null,
+        service_id: item.service_id?._id ?? item.service_id ?? null,
+        used_weight_kg: item.used_weight_kg ?? null,
+        total_weight_kg: item.total_weight_kg ?? null
       };
     });
 

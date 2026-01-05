@@ -41,9 +41,12 @@ import {
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import * as React from 'react';
+import { Loader2 } from 'lucide-react';
 import { Icons } from '../icons';
 import { OrgSwitcher } from '../org-switcher';
 import { useUser } from './user-provider';
+import { useSocket } from '@/providers/socket-provider';
+import { Badge } from '@/components/ui/badge';
 
 export const company = {
   name: 'Acme Inc',
@@ -62,16 +65,28 @@ export default function AppSidebar() {
   const { isOpen } = useMediaQuery();
   const router = useRouter();
   const { admin, loading } = useUser();
+  const { unreadDispatchCount, resetDispatchCount } = useSocket();
+
+  // Reset badge when visiting vendor orders page
+  React.useEffect(() => {
+    if (pathname === '/dashboard/vendor-orders') {
+      resetDispatchCount();
+    }
+  }, [pathname, resetDispatchCount]);
+
+  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const onLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
-    } finally {
-      window.location.replace('/auth/login');
+    } catch (error) {
+      console.error('Logout failed', error);
     }
+    window.location.replace('/auth/login');
   };
 
   const handleSwitchTenant = (_tenantId: string) => {
@@ -153,9 +168,21 @@ export default function AppSidebar() {
                     tooltip={item.title}
                     isActive={pathname === item.url}
                   >
-                    <Link href={item.url}>
+                    <Link
+                      href={item.url}
+                      className='relative flex items-center'
+                    >
                       <Icon />
                       <span>{item.title}</span>
+                      {item.title === 'Vendor Orders' &&
+                        unreadDispatchCount > 0 && (
+                          <Badge
+                            variant='destructive'
+                            className='ml-auto flex h-5 w-5 items-center justify-center rounded-full p-0 text-[10px]'
+                          >
+                            {unreadDispatchCount}
+                          </Badge>
+                        )}
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -224,13 +251,18 @@ export default function AppSidebar() {
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
                   onClick={onLogout}
+                  disabled={isLoggingOut}
                   onSelect={(e) => {
                     e.preventDefault();
                     onLogout();
                   }}
                 >
-                  <IconLogout className='mr-2 h-4 w-4' />
-                  Log out
+                  {isLoggingOut ? (
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                  ) : (
+                    <IconLogout className='mr-2 h-4 w-4' />
+                  )}
+                  <span>{isLoggingOut ? 'Logging out...' : 'Log out'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

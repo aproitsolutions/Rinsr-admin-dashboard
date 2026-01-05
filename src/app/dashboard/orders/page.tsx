@@ -22,7 +22,6 @@ import {
 } from '@/components/ui/select';
 import { getOrders } from '@/lib/api/orders';
 import { Order } from '@/constants/data';
-import { Pencil } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
@@ -35,6 +34,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger
 } from '@/components/ui/alert-dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
+} from '@/components/ui/dialog';
+import { Eye, Pencil, Scale, Loader2 } from 'lucide-react';
 
 interface OrdersPageProps {
   className?: string;
@@ -50,6 +58,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
   const [loading, setLoading] = useState(true);
   const [pageIndex, setPageIndex] = useState(1);
   const [perPage, setPerPage] = useState(10);
+  const [totalOrders, setTotalOrders] = useState(0);
   const [alertMessage, setAlertMessage] = useState<string | null>(null);
 
   const [userStatusFilter, setUserStatusFilter] = useState<string>('all');
@@ -65,6 +74,14 @@ export default function OrdersPage({ className }: OrdersPageProps) {
   const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(
     new Set()
   );
+
+  // Add Weight State
+  const [weightDialogOpen, setWeightDialogOpen] = useState(false);
+  const [selectedOrderIdForWeight, setSelectedOrderIdForWeight] = useState<
+    string | null
+  >(null);
+  const [weightInput, setWeightInput] = useState('');
+  const [isUpdatingWeight, setIsUpdatingWeight] = useState(false);
 
   // Fetch Filters on mount
   useEffect(() => {
@@ -114,14 +131,17 @@ export default function OrdersPage({ className }: OrdersPageProps) {
 
         if (response.success && Array.isArray(response.data)) {
           setOrders(response.data);
+          setTotalOrders(response.total || 0);
           setSelectedOrderIds(new Set());
         } else {
           setOrders([]);
+          setTotalOrders(0);
           setSelectedOrderIds(new Set());
         }
       } catch (error) {
         console.error('Error fetching orders:', error);
         setOrders([]);
+        setTotalOrders(0);
       } finally {
         setLoading(false);
       }
@@ -229,7 +249,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
   }, [orders, search, serviceFilter]);
 
   const displayedOrders = filteredOrders;
-  const pageCount = Math.max(1, Math.ceil(50 / perPage));
+  const pageCount = Math.max(1, Math.ceil(totalOrders / perPage));
 
   // Checking "All" state
   const isAllSelected =
@@ -237,6 +257,42 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     selectedOrderIds.size === displayedOrders.length;
   const isIndeterminate =
     selectedOrderIds.size > 0 && selectedOrderIds.size < displayedOrders.length; // primitive Checkbox might not support indeterminate via prop directly easily without ref, skipping for now logic-wise
+
+  // Add Weight Handlers
+  const openWeightDialog = (orderId: string) => {
+    setSelectedOrderIdForWeight(orderId);
+    setWeightInput('');
+    setWeightDialogOpen(true);
+  };
+
+  const handleSaveWeight = async () => {
+    if (!selectedOrderIdForWeight || !weightInput) return;
+
+    setIsUpdatingWeight(true);
+    try {
+      const response = await fetch(
+        `/api/orders/order/${selectedOrderIdForWeight}`,
+        {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ used_weight_kg: Number(weightInput) })
+        }
+      );
+      const data = await response.json();
+
+      if (data.success) {
+        setAlertMessage('✅ Weight updated successfully!');
+        setWeightDialogOpen(false);
+      } else {
+        setAlertMessage(`⚠️ ${data.message || 'Failed to update weight'}`);
+      }
+    } catch (err) {
+      console.error('Error updating weight:', err);
+      setAlertMessage('❌ Error updating weight');
+    } finally {
+      setIsUpdatingWeight(false);
+    }
+  };
 
   // Cancel order function
   const handleCancelOrder = async (orderId: string) => {
@@ -378,7 +434,9 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 <TableHead className='text-foreground/80'>Service</TableHead>
                 <TableHead className='text-foreground/80'>Plan Name</TableHead>
                 <TableHead className='text-foreground/80'>Name</TableHead>
-                <TableHead className='text-foreground/80'>Plan</TableHead>
+                <TableHead className='text-foreground/80'>
+                  Vendor Status
+                </TableHead>
                 <TableHead className='text-foreground/80'>Address</TableHead>
                 <TableHead className='text-foreground/80'>
                   Pickup Slot
@@ -460,7 +518,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                           : 'Admin'}
                       </TableCell>
 
-                      <TableCell>{order.plan_id_name || '—'}</TableCell>
+                      <TableCell>{order.vendor_status || '—'}</TableCell>
                       <TableCell>{order.address_line || '—'}</TableCell>
                       <TableCell>
                         {typeof order.pickup_time_slot === 'string'
@@ -489,6 +547,18 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                       )}
 
                       <TableCell className='space-x-2 pr-6 text-right'>
+                        {/* Add Weight Button */}
+                        <Button
+                          variant='outline'
+                          size='sm'
+                          className='hover:bg-accent hover:text-accent-foreground cursor-pointer'
+                          onClick={() => openWeightDialog(order.id)}
+                        >
+                          <Scale className='mr-2 h-4 w-4' />
+                          Add Weight
+                        </Button>
+
+                        {/* Edit Button - Visible to All */}
                         <Link href={`/dashboard/orders/order/${order.id}/edit`}>
                           <Button
                             variant='outline'
@@ -500,47 +570,53 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                           </Button>
                         </Link>
 
-                        {/* Cancel Button */}
-                        {isCancelled ? (
-                          <Button
-                            variant='secondary'
-                            size='sm'
-                            disabled
-                            className='ml-2 cursor-not-allowed opacity-70'
-                          >
-                            Cancelled
-                          </Button>
-                        ) : (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                        {/* Cancel Button - Visible only to Super Admins (not hub users) */}
+                        {admin?.role !== 'hub_user' && (
+                          <>
+                            {isCancelled ? (
                               <Button
-                                variant='destructive'
+                                variant='secondary'
                                 size='sm'
-                                className='ml-2 cursor-pointer'
+                                disabled
+                                className='ml-2 cursor-not-allowed opacity-70'
                               >
-                                Cancel
+                                Cancelled
                               </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Cancel Order
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to cancel this order?
-                                  This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Close</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => handleCancelOrder(order.id)}
-                                >
-                                  Confirm Cancel
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                            ) : (
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant='destructive'
+                                    size='sm'
+                                    className='ml-2 cursor-pointer'
+                                  >
+                                    Cancel
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Cancel Order
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      Are you sure you want to cancel this
+                                      order? This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Close</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() =>
+                                        handleCancelOrder(order.id)
+                                      }
+                                    >
+                                      Confirm Cancel
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            )}
+                          </>
                         )}
                       </TableCell>
                     </TableRow>
@@ -564,7 +640,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
         <div className='border-border bg-card text-foreground border-t p-3'>
           <div className='flex w-full flex-wrap items-center justify-between gap-4 sm:gap-8'>
             <div className='text-muted-foreground text-sm'>
-              {filteredOrders.length} total orders found.
+              {totalOrders} total orders found.
             </div>
 
             <div className='flex items-center gap-4 sm:gap-6 lg:gap-8'>
@@ -660,6 +736,52 @@ export default function OrdersPage({ className }: OrdersPageProps) {
             </AlertDialogContent>
           </AlertDialog>
         )}
+
+        {/* Weight Input Dialog */}
+        <Dialog open={weightDialogOpen} onOpenChange={setWeightDialogOpen}>
+          <DialogContent className='sm:max-w-[425px]'>
+            <DialogHeader>
+              <DialogTitle>Add Weight (kg)</DialogTitle>
+              <DialogDescription>
+                Enter the used weight for this order in kilograms.
+              </DialogDescription>
+            </DialogHeader>
+            <div className='grid gap-4 py-4'>
+              <div className='grid grid-cols-4 items-center gap-4'>
+                <span className='text-right text-sm font-medium'>
+                  Weight (kg):
+                </span>
+                <Input
+                  id='weight'
+                  type='number'
+                  className='col-span-3'
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  placeholder='e.g., 5.5'
+                />
+              </div>
+            </div>
+            <div className='flex justify-end space-x-2'>
+              <Button
+                variant='outline'
+                onClick={() => setWeightDialogOpen(false)}
+                disabled={isUpdatingWeight}
+              >
+                Cancel
+              </Button>
+              <Button onClick={handleSaveWeight} disabled={isUpdatingWeight}>
+                {isUpdatingWeight ? (
+                  <>
+                    <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </PageContainer>
   );

@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useRouter } from 'next/navigation';
+import { Loader2 } from 'lucide-react';
 
 export function UserNav() {
   const router = useRouter();
@@ -39,15 +40,19 @@ export function UserNav() {
     fetchAdmin();
   }, []);
 
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
   const onLogout = async () => {
+    setIsLoggingOut(true);
     try {
       await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
-    } finally {
-      window.location.replace('/auth/login');
+    } catch (error) {
+      console.error('Logout failed', error);
     }
+    window.location.replace('/auth/login');
   };
 
   const initials = admin?.name
@@ -98,12 +103,17 @@ export function UserNav() {
         <DropdownMenuSeparator />
         <DropdownMenuItem
           onClick={onLogout}
+          disabled={isLoggingOut}
           onSelect={(e) => {
             e.preventDefault();
             onLogout();
           }}
         >
-          Sign out
+          {isLoggingOut ? (
+            <Loader2 className='mr-2 h-4 w-4 animate-spin' />
+          ) : (
+            'Sign out'
+          )}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

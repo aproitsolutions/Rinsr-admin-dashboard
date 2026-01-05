@@ -5,6 +5,7 @@ import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 import type { Metadata } from 'next';
 import { cookies } from 'next/headers';
 import { UserProvider } from '@/components/layout/user-provider';
+import { SocketProvider } from '@/providers/socket-provider';
 import PermissionGuard from '@/components/layout/permission-guard';
 
 export const metadata: Metadata = {
@@ -23,15 +24,17 @@ export default async function DashboardLayout({
   return (
     <KBar>
       <UserProvider>
-        <SidebarProvider defaultOpen={defaultOpen}>
-          <AppSidebar />
-          <SidebarInset>
-            <Header />
-            {/* page main content */}
-            <PermissionGuard>{children}</PermissionGuard>
-            {/* page main content ends */}
-          </SidebarInset>
-        </SidebarProvider>
+        <SocketProvider>
+          <SidebarProvider defaultOpen={defaultOpen}>
+            <AppSidebar />
+            <SidebarInset>
+              <Header />
+              {/* page main content */}
+              <PermissionGuard>{children}</PermissionGuard>
+              {/* page main content ends */}
+            </SidebarInset>
+          </SidebarProvider>
+        </SocketProvider>
       </UserProvider>
     </KBar>
   );

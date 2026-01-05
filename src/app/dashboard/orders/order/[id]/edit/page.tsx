@@ -54,6 +54,7 @@ export default function EditOrderPage() {
       address_label: '',
       address_line: '',
       heavy_items: '',
+      total_weight_kg: '',
       status: '',
       vendor_status: '',
       vendor_id: ''
@@ -91,11 +92,15 @@ export default function EditOrderPage() {
   useEffect(() => {
     async function fetchOrder() {
       try {
-        const res = await fetch(`/api/orders/order/${orderId}`);
+        const res = await fetch(`/api/orders/order/${orderId}`, {
+          cache: 'no-store'
+        });
         const data = await res.json();
+        console.log('Client Fetch Order Response:', data);
 
         if (data.success) {
           const order = data.data || data.order || {};
+          console.log('Order Data for Form:', order);
           const pickup_address = order.pickup_address || {};
           const pickup_time_slot = order.pickup_time_slot || {};
           const vendor_status = order.vendor_status || '';
@@ -127,6 +132,21 @@ export default function EditOrderPage() {
 
           setOrderImage(order.image || null);
 
+          const weightValue =
+            order.used_weight_kg !== undefined && order.used_weight_kg !== null
+              ? String(order.used_weight_kg)
+              : order.total_weight_kg !== undefined &&
+                  order.total_weight_kg !== null
+                ? String(order.total_weight_kg)
+                : '';
+
+          console.log(
+            '[DEBUG] Setting Form Weight:',
+            weightValue,
+            'Type:',
+            typeof weightValue
+          );
+
           form.reset({
             pickup_date: order.pickup_date
               ? order.pickup_date.split('T')[0]
@@ -136,17 +156,19 @@ export default function EditOrderPage() {
             address_label: pickup_address.label || 'Home',
             address_line: pickup_address.address_line || '',
             heavy_items: order.heavy_items || '',
+            total_weight_kg: weightValue,
             status: order.status || 'scheduled',
             vendor_id: vendorId || '',
             vendor_status: vendor_status || ''
           });
         } else {
-          setAlertMessage('Failed to load order.');
+          console.error('Failed response:', data);
+          setAlertMessage(data.message || 'Failed to load order details.');
           setAlertOpen(true);
         }
       } catch (err) {
-        // console.error('Error loading order:', err);
-        setAlertMessage('Error loading order.');
+        console.error('Error loading order:', err);
+        setAlertMessage(`Error loading order: ${(err as Error).message}`);
         setAlertOpen(true);
       } finally {
         setLoading(false);
@@ -171,6 +193,7 @@ export default function EditOrderPage() {
           address_line: values.address_line
         },
         heavy_items: values.heavy_items,
+        used_weight_kg: values.total_weight_kg,
         status: values.status
       };
 
@@ -333,6 +356,26 @@ export default function EditOrderPage() {
                   <FormLabel>Heavy Items</FormLabel>
                   <FormControl>
                     <Input placeholder='e.g. Bedsheets, Curtains' {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Used Weight (kg) */}
+            <FormField
+              control={form.control}
+              name='total_weight_kg'
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Used Weight (kg)</FormLabel>
+                  <FormControl>
+                    <Input
+                      type='number'
+                      step='0.01'
+                      placeholder='Enter weight in kg'
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
