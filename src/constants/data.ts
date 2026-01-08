@@ -26,6 +26,7 @@ export type Order = {
   items?: OrderItem[];
   vendor_status?: string;
   user_status?: string;
+  emergency?: boolean;
 
   // Fields used by current orders listing UI (from real API)
   plan_name?: string;
@@ -33,7 +34,7 @@ export type Order = {
   plan_id_name?: string;
   address_line?: string;
   pickup_time_slot?: string;
-
+  delivery_date?: string;
   vendor_id?:
     | string
     | {

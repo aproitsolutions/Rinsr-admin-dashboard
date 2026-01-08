@@ -94,9 +94,15 @@ export default function ServicesPage() {
           </Card>
         </div>
 
-        {/* 🔍 Search + Table */}
         <div className='mt-4 flex w-full items-center justify-between gap-2'>
-          <h1 className='text-foreground text-2xl font-bold'>Services</h1>
+          <div className='flex items-center gap-4'>
+            <h1 className='text-foreground text-2xl font-bold'>Services</h1>
+            <Link href='/dashboard/services/new'>
+              <Button size='sm' className='cursor-pointer hover:pr-2'>
+                <Package className='mr-2 h-4 w-4' /> Create Service
+              </Button>
+            </Link>
+          </div>
           <Input
             placeholder='Search services...'
             value={search}

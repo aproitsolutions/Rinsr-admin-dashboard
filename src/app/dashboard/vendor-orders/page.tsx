@@ -178,8 +178,10 @@ export default function VendorOrdersPage() {
                             : order.vendor_status === 'accepted'
                               ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                               : order.vendor_status === 'dispatched'
-                                ? 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
+                                ? 'bg-purple-100 text-purple-800 dark:bg-red-900 dark:text-purple-200'
+                                : order.vendor_status === 'vendor_declined'
+                                  ? 'bg-purple-100 text-purple-800 dark:bg-red-900 dark:text-purple-200'
+                                  : 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200'
                         }`}
                       >
                         {order.vendor_status || '—'}

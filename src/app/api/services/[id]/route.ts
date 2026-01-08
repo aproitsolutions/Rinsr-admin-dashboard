@@ -1,13 +1,13 @@
-// src/app/api/services/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-interface ServiceResponse {
-  success: boolean;
-  message: string;
-  service?: any;
-  error?: string;
-}
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '10mb'
+    }
+  }
+};
 
 export async function GET(
   req: NextRequest,

@@ -131,53 +131,33 @@ export async function GET(request: NextRequest) {
     const normalized = rawItems.map((item) => {
       const id =
         item._id ?? item.id ?? item.order_id ?? String(item.uuid ?? '');
-
-      if (rawItems.indexOf(item) === 0) {
-        console.log(
-          '[DEBUG] First Upstream List Item Keys:',
-          Object.keys(item)
-        );
-        console.log(
-          '[DEBUG] First Upstream List Item Weight:',
-          item.used_weight_kg
-        );
-      }
-
-      // ✅ Plan Name
       const plan_name =
         item.subscription_snapshot?.plan_name ??
         item.plan?.name ??
         item.plan_name ??
         '—';
 
-      // ✅ Plan ID or name
       const plan_id_name =
         typeof item.plan_id === 'object'
           ? (item.plan_id?.name ?? '—')
           : (item.plan_id ?? '—');
 
-      // ✅ User name or fallback
       const name =
         item.user_id?.name ??
         item.user_name ??
         item.customer_name ??
         (typeof item.user_id === 'string' ? item.user_id : 'N/A');
 
-      // ✅ Address
       const address_line = item.pickup_address?.address_line ?? '—';
 
-      // ✅ Pickup Slot
       const pickup_time_slot = item.pickup_time_slot
         ? `${item.pickup_time_slot.start ?? ''}-${item.pickup_time_slot.end ?? ''}`
         : '—';
 
-      // ✅ Service Name
       const service_name = item.service_id?.name ?? '—';
 
-      // ✅ Vendor ID (can be string or populated object)
       const vendor_id = item.vendor_id || item.vendor || null;
 
-      // ✅ Hub ID (can be string or populated object)
       const hub_id = item.hub_id || item.hub || null;
 
       const status = item.status || null;
@@ -193,15 +173,16 @@ export async function GET(request: NextRequest) {
         vendor_id,
         hub_id,
         status,
+        delivery_date: item.delivery_date || null,
         user_status: item.user_status || null,
         vendor_status: item.vendor_status || null,
         service_id: item.service_id?._id ?? item.service_id ?? null,
         used_weight_kg: item.used_weight_kg ?? null,
-        total_weight_kg: item.total_weight_kg ?? null
+        total_weight_kg: item.total_weight_kg ?? null,
+        emergency: item.emergency || false
       };
     });
 
-    // ✅ Build Response
     const response: OrderResponse = {
       success: true,
       message: 'Orders fetched successfully',
@@ -221,120 +202,3 @@ export async function GET(request: NextRequest) {
     return NextResponse.json(errorResponse, { status: 500 });
   }
 }
-
-/**
- * POST /api/orders
- * Create a new order
- */
-// export async function POST(request: NextRequest) {
-//   console.log('🟢 POST /api/orders invoked');
-
-//   try {
-//     const baseUrl = process.env.RINSR_API_BASE;
-//     const cookieToken = (await cookies()).get('rinsr_token')?.value;
-//     const token = cookieToken || undefined;
-
-//     console.log('➡️ Base URL:', baseUrl);
-//     console.log('➡️ Token present:', !!token);
-
-//     if (!baseUrl) {
-//       return NextResponse.json(
-//         { success: false, message: 'Missing RINSR_API_BASE' },
-//         { status: 500 }
-//       );
-//     }
-
-//     if (!token) {
-//       return NextResponse.json(
-//         { success: false, message: 'Unauthorized - Missing token' },
-//         { status: 401 }
-//       );
-//     }
-
-//     const body = await request.json();
-
-//     // ✅ Decode the token to extract user_id
-//     let userId: string | null = null;
-//     try {
-//       const decoded = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
-//       console.log('🧩 Decoded token payload:', decoded);
-
-//       // Adjust based on your token structure
-//       userId =
-//         decoded?.user?._id ||
-//         decoded?.user_id ||
-//         decoded?._id ||
-//         decoded?.id ||
-//         null;
-
-//       console.log('🧩 Extracted userId:', userId);
-//     } catch (err) {
-//       console.warn('⚠️ Failed to decode token:', err);
-//     }
-
-//     // ✅ Ensure plan_id is always a string
-//     const normalizedPlanId =
-//       typeof body.plan_id === 'object' ? body.plan_id?._id : body.plan_id;
-
-//     // ✅ Build clean payload for upstream
-//     const normalizedBody = {
-//       ...body,
-//       plan_id: normalizedPlanId,
-//       user_id: userId,
-//     };
-
-//     console.log('📦 Final payload sent upstream:', JSON.stringify(normalizedBody, null, 2));
-
-//     // ✅ POST to backend
-//     const upstreamRes = await fetch(`${baseUrl}/orders`, {
-//       method: 'POST',
-//       headers: {
-//         Authorization: `Bearer ${token}`,
-//         'Content-Type': 'application/json',
-//         Accept: 'application/json',
-//       },
-//       body: JSON.stringify(normalizedBody),
-//     });
-
-//     const rawText = await upstreamRes.text();
-//     let data: any;
-//     try {
-//       data = JSON.parse(rawText);
-//     } catch {
-//       data = { raw: rawText };
-//     }
-
-//     console.log('➡️ Received response:', JSON.stringify(data, null, 2));
-
-//     if (!upstreamRes.ok) {
-//       return NextResponse.json(
-//         {
-//           success: false,
-//           message: 'Upstream order creation failed',
-//           rawUpstreamResponse: rawText,
-//           status: upstreamRes.status,
-//         },
-//         { status: upstreamRes.status }
-//       );
-//     }
-
-//     return NextResponse.json(
-//       {
-//         success: true,
-//         message: 'Order created successfully',
-//         data: data?.data ?? data,
-//       },
-//       { status: 201 }
-//     );
-//   } catch (error) {
-//     console.error('🔥 API /api/orders POST crashed with error:', error);
-//     return NextResponse.json(
-//       {
-//         success: false,
-//         message: 'Failed to create order',
-//         error: error instanceof Error ? error.stack || error.message : 'Unknown error',
-//       },
-//       { status: 500 }
-//     );
-//   }
-// }

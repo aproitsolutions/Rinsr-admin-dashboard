@@ -92,12 +92,12 @@ export async function GET(
         );
 
         if (foundItem) {
-          console.log('✅ Found order in Fallback List API!');
-          console.log('[DEBUG] Fallback Item Keys:', Object.keys(foundItem));
-          console.log(
-            '[DEBUG] Fallback Item Weight:',
-            foundItem.used_weight_kg
-          );
+          // console.log('✅ Found order in Fallback List API!');
+          // console.log('[DEBUG] Fallback Item Keys:', Object.keys(foundItem));
+          // console.log(
+          //   '[DEBUG] Fallback Item Weight:',
+          //   foundItem.used_weight_kg
+          // );
           // Normalize/Fix image if needed
           if (foundItem?.image && !foundItem.image.startsWith('http')) {
             const rootUrl = normalizedBase.replace(/\/api$/, '');

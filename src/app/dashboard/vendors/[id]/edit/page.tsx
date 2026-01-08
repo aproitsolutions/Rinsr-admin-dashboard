@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import Script from 'next/script';
 import GoogleMapPicker from '@/components/maps/GoogleMapPicker';
+import PageContainer from '@/components/layout/page-container';
 
 import {
   AlertDialog,
@@ -243,104 +244,105 @@ export default function EditVendorPage() {
           </div>
         </AlertDialogContent>
       </AlertDialog>
+      <PageContainer scrollable>
+        {/* Main Page */}
+        <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
+          <h1 className='text-foreground text-2xl font-bold'>Edit Vendor</h1>
 
-      {/* Main Page */}
-      <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
-        <h1 className='text-foreground text-2xl font-bold'>Edit Vendor</h1>
+          <Card>
+            <CardHeader>
+              <CardTitle className='text-lg font-semibold'>
+                Vendor Details
+              </CardTitle>
+            </CardHeader>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className='text-lg font-semibold'>
-              Vendor Details
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent>
-            <form onSubmit={handleSubmit} className='space-y-5'>
-              {/* Company Name */}
-              <div className='space-y-2'>
-                <Label htmlFor='company_name'>Company Name</Label>
-                <Input
-                  id='company_name'
-                  value={formData.company_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, company_name: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              {/* Location */}
-              <div className='space-y-2'>
-                <Label htmlFor='location'>Location</Label>
-                <Input
-                  id='location'
-                  value={formData.location}
-                  onChange={(e) =>
-                    setFormData({ ...formData, location: e.target.value })
-                  }
-                  ref={autocompleteInputRef}
-                  placeholder='Search location...'
-                  required
-                />
-                <input
-                  type='hidden'
-                  value={formData.location_coordinates}
-                  name='location_coordinates'
-                />
-
-                <div className='mt-2'>
-                  <Label>Select on Map</Label>
-                  <GoogleMapPicker
-                    initialLocation={mapLocation}
-                    onLocationSelect={handleMapLocationSelect}
+            <CardContent>
+              <form onSubmit={handleSubmit} className='space-y-5'>
+                {/* Company Name */}
+                <div className='space-y-2'>
+                  <Label htmlFor='company_name'>Company Name</Label>
+                  <Input
+                    id='company_name'
+                    value={formData.company_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, company_name: e.target.value })
+                    }
+                    required
                   />
                 </div>
-              </div>
 
-              {/* Phone Number */}
-              <div className='space-y-2'>
-                <Label htmlFor='phone_number'>Phone Number</Label>
-                <Input
-                  id='phone_number'
-                  value={formData.phone_number}
-                  onChange={(e) =>
-                    setFormData({ ...formData, phone_number: e.target.value })
-                  }
-                  required
-                />
-              </div>
-
-              {/* Services */}
-              <div className='space-y-2'>
-                <Label>Services</Label>
-                {formData.services.map((service, i) => (
+                {/* Location */}
+                <div className='space-y-2'>
+                  <Label htmlFor='location'>Location</Label>
                   <Input
-                    key={i}
-                    value={service}
-                    onChange={(e) => handleServiceChange(i, e.target.value)}
-                    placeholder='e.g. Laundry, Ironing'
-                    className='mb-2'
+                    id='location'
+                    value={formData.location}
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
+                    ref={autocompleteInputRef}
+                    placeholder='Search location...'
+                    required
                   />
-                ))}
-                <Button
-                  type='button'
-                  variant='outline'
-                  size='sm'
-                  onClick={addServiceField}
-                >
-                  + Add another service
-                </Button>
-              </div>
+                  <input
+                    type='hidden'
+                    value={formData.location_coordinates}
+                    name='location_coordinates'
+                  />
 
-              {/* Submit Button */}
-              <Button type='submit' disabled={saving}>
-                {saving ? 'Saving...' : 'Save Changes'}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
+                  <div className='mt-2'>
+                    <Label>Select on Map</Label>
+                    <GoogleMapPicker
+                      initialLocation={mapLocation}
+                      onLocationSelect={handleMapLocationSelect}
+                    />
+                  </div>
+                </div>
+
+                {/* Phone Number */}
+                <div className='space-y-2'>
+                  <Label htmlFor='phone_number'>Phone Number</Label>
+                  <Input
+                    id='phone_number'
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+
+                {/* Services */}
+                <div className='space-y-2'>
+                  <Label>Services</Label>
+                  {formData.services.map((service, i) => (
+                    <Input
+                      key={i}
+                      value={service}
+                      onChange={(e) => handleServiceChange(i, e.target.value)}
+                      placeholder='e.g. Laundry, Ironing'
+                      className='mb-2'
+                    />
+                  ))}
+                  <Button
+                    type='button'
+                    variant='outline'
+                    size='sm'
+                    onClick={addServiceField}
+                  >
+                    + Add another service
+                  </Button>
+                </div>
+
+                {/* Submit Button */}
+                <Button type='submit' disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+        </div>
+      </PageContainer>
     </>
   );
 }

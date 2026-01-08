@@ -258,6 +258,9 @@ export default function VendorOrderDetailsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value='requested'>Requested</SelectItem>
+                    <SelectItem value='vendor_declined'>
+                      Vendor Declined
+                    </SelectItem>
                     <SelectItem value='picked_up'>Picked Up</SelectItem>
                     <SelectItem value='processing'>Processing</SelectItem>
                     <SelectItem value='washing_completed'>

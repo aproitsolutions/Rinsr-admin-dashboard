@@ -203,7 +203,9 @@ export default function OrdersPage({ className }: OrdersPageProps) {
   // Selection Handlers
   const toggleSelectAll = (checked: boolean) => {
     if (checked) {
-      const newSet = new Set(displayedOrders.map((o) => o.id));
+      const newSet = new Set(
+        displayedOrders.filter((o) => !o.vendor_id).map((o) => o.id)
+      );
       setSelectedOrderIds(newSet);
     } else {
       setSelectedOrderIds(new Set());
@@ -439,7 +441,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 </TableHead>
                 <TableHead className='text-foreground/80'>Address</TableHead>
                 <TableHead className='text-foreground/80'>
-                  Pickup Slot
+                  Delivery Date
                 </TableHead>
                 <TableHead className='text-foreground/80'>
                   Order Status
@@ -447,6 +449,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 <TableHead className='text-foreground/80'>
                   User Status
                 </TableHead>
+                <TableHead className='text-foreground/80'>Emergency</TableHead>
                 {admin?.role !== 'hub_user' && (
                   <TableHead className='text-foreground/80'>Hub</TableHead>
                 )}
@@ -463,7 +466,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                     <TableCell>
                       <Skeleton className='bg-muted/40 h-4 w-4' />
                     </TableCell>
-                    {Array.from({ length: 9 }).map((_, j) => (
+                    {Array.from({ length: 10 }).map((_, j) => (
                       <TableCell key={j}>
                         <Skeleton className='bg-muted/40 h-6 w-full' />
                       </TableCell>
@@ -477,7 +480,11 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                   return (
                     <TableRow
                       key={order.id ?? idx}
-                      className='hover:bg-accent hover:text-accent-foreground transition-colors'
+                      className={`transition-colors ${
+                        order.emergency
+                          ? 'bg-red-100 hover:bg-red-200 dark:bg-red-900/30 dark:hover:bg-red-900/50'
+                          : 'hover:bg-accent hover:text-accent-foreground'
+                      }`}
                     >
                       <TableCell className='pl-4'>
                         <Checkbox
@@ -485,6 +492,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                           onCheckedChange={(checked) =>
                             toggleSelectOrder(order.id, checked as boolean)
                           }
+                          disabled={!!order.vendor_id}
                         />
                       </TableCell>
                       <TableCell className='font-medium'>
@@ -521,12 +529,19 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                       <TableCell>{order.vendor_status || '—'}</TableCell>
                       <TableCell>{order.address_line || '—'}</TableCell>
                       <TableCell>
-                        {typeof order.pickup_time_slot === 'string'
-                          ? order.pickup_time_slot
+                        {typeof order.delivery_date === 'string'
+                          ? order.delivery_date
                           : '—'}
                       </TableCell>
                       <TableCell>{order.status || '—'}</TableCell>
                       <TableCell>{order.user_status || '—'}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`font-semibold ${order.emergency ? 'text-red-600' : ''}`}
+                        >
+                          {order.emergency ? 'Yes' : 'No'}
+                        </span>
+                      </TableCell>
                       {/* Hide Hub column for hub_user if desired, OR just show it.
                           If we want to hide it completely, we need to hide the Header too.
                           For now, let's keep it visible so they confirm it's THEIR hub.
