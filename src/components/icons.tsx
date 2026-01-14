@@ -36,7 +36,8 @@ import {
   IconUsers,
   IconBrandDocker,
   IconWash,
-  IconTruck
+  IconTruck,
+  IconRobot
 } from '@tabler/icons-react';
 import { ArrowDown } from 'lucide-react';
 
@@ -80,5 +81,6 @@ export const Icons = {
   hub: IconBrandDocker,
   service: IconWash,
   cheverondown: ArrowDown,
-  truck: IconTruck
+  truck: IconTruck,
+  bot: IconRobot
 };

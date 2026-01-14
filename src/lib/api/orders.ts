@@ -183,3 +183,102 @@ export async function deleteOrder(orderId: string): Promise<OrderResponse> {
 
   return response.json();
 }
+
+/**
+ * Get new orders
+ */
+export async function getNewOrders(
+  params: GetOrdersParams = {}
+): Promise<OrderResponse> {
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+    status = '',
+    user_status = '',
+    vendor_id = '',
+    service_id = '',
+    hub_id = ''
+  } = params;
+
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(search && { search }),
+    ...(status && { status }),
+    ...(user_status && { user_status }),
+    ...(vendor_id && { vendor_id }),
+    ...(service_id && { service_id }),
+    ...(hub_id && { hub_id })
+  });
+
+  const response = await fetch(`${API_BASE_URL}/orders/new?${queryParams}`, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    cache: 'no-store'
+  });
+
+  if (!response.ok) {
+    let message = response.statusText;
+    try {
+      const err = await response.json();
+      message = err?.message || message;
+    } catch {}
+    throw new Error(`Failed to fetch new orders: ${message}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Get cancelled orders
+ */
+export async function getCancelledOrders(
+  params: GetOrdersParams = {}
+): Promise<OrderResponse> {
+  const {
+    page = 1,
+    limit = 10,
+    search = '',
+    status = '',
+    user_status = '',
+    vendor_id = '',
+    service_id = '',
+    hub_id = ''
+  } = params;
+
+  const queryParams = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+    ...(search && { search }),
+    ...(status && { status }),
+    ...(user_status && { user_status }),
+    ...(vendor_id && { vendor_id }),
+    ...(service_id && { service_id }),
+    ...(hub_id && { hub_id })
+  });
+
+  const response = await fetch(
+    `${API_BASE_URL}/orders/cancelled?${queryParams}`,
+    {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      cache: 'no-store'
+    }
+  );
+
+  if (!response.ok) {
+    let message = response.statusText;
+    try {
+      const err = await response.json();
+      message = err?.message || message;
+    } catch {}
+    throw new Error(`Failed to fetch cancelled orders: ${message}`);
+  }
+
+  return response.json();
+}

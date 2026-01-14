@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { getOrders } from '@/lib/api/orders';
+import { getCancelledOrders } from '@/lib/api/orders';
 import { Order } from '@/constants/data';
 import { Input } from '@/components/ui/input';
 import {
@@ -51,7 +51,7 @@ interface OrdersPageProps {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser } from '@/components/layout/user-provider';
 
-export default function OrdersPage({ className }: OrdersPageProps) {
+export default function CancelledOrdersPage({ className }: OrdersPageProps) {
   const { admin } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
@@ -121,7 +121,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     async function fetchOrders() {
       setLoading(true);
       try {
-        const response = await getOrders({
+        const response = await getCancelledOrders({
           page: pageIndex,
           limit: perPage,
           user_status: userStatusFilter === 'all' ? '' : userStatusFilter,
@@ -330,7 +330,9 @@ export default function OrdersPage({ className }: OrdersPageProps) {
       <div className='flex flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
         <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-          <h1 className='text-foreground text-2xl font-bold'>Orders</h1>
+          <h1 className='text-foreground text-2xl font-bold'>
+            Cancelled Orders
+          </h1>
 
           <div className='flex flex-col gap-2 text-sm sm:flex-row sm:items-center'>
             {/* Service Filter */}
@@ -581,7 +583,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                             className='hover:bg-accent hover:text-accent-foreground cursor-pointer'
                           >
                             <Pencil className='mr-2 h-4 w-4' />
-                            View
+                            Edit
                           </Button>
                         </Link>
 

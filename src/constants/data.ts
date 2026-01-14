@@ -57,6 +57,13 @@ export type Order = {
   hub?: { _id: string; name?: string };
   service_id?: string | null;
   service_name?: string;
+
+  // Added for Payments
+  _id?: string;
+  user_id?: string | { name?: string };
+  total_price?: number;
+  payment_status?: string;
+  payment_for?: string;
 };
 
 export type OrderItem = {
@@ -90,11 +97,27 @@ export const navItems: NavItem[] = [
   },
   {
     title: 'Orders',
-    url: '/dashboard/orders',
+    url: '#',
     icon: 'order',
-    isActive: false,
+    isActive: true,
     shortcut: ['d', 'd'],
-    items: []
+    items: [
+      {
+        title: 'All Orders',
+        url: '/dashboard/orders',
+        icon: 'order'
+      },
+      {
+        title: 'New Orders',
+        url: '/dashboard/orders/new-orders',
+        icon: 'order'
+      },
+      {
+        title: 'Cancelled Orders',
+        url: '/dashboard/orders/cancelled',
+        icon: 'order'
+      }
+    ]
   },
   {
     title: 'Vendor Orders',
@@ -120,6 +143,15 @@ export const navItems: NavItem[] = [
     shortcut: ['d', 'd'],
     items: [] // Empty array as there are no child items for Dashboard
   },
+  {
+    title: 'Payments',
+    url: '/dashboard/payments',
+    icon: 'billing',
+    isActive: false,
+    shortcut: ['p', 'a'],
+    items: []
+  },
+
   {
     title: 'Admins',
     url: '/dashboard/admins',
@@ -167,6 +199,14 @@ export const navItems: NavItem[] = [
     shortcut: ['p', 'p'],
     isActive: false,
     items: [] // No child items
+  },
+  {
+    title: 'AI Agent',
+    url: '/dashboard/ai-agent',
+    icon: 'bot',
+    isActive: false,
+    shortcut: ['a', 'i'],
+    items: []
   },
   {
     title: 'Account',
@@ -268,4 +308,26 @@ export function filterNavItemsByPermissions(user: CurrentAdmin): NavItem[] {
   }
 
   return result;
+}
+
+export interface Payment {
+  _id: string;
+  order_id: Order;
+  razorpay_order_id?: string;
+  razorpay_payment_id?: string;
+  razorpay_signature?: string;
+  createdAt: string;
+  updatedAt: string;
+  [key: string]: any;
+}
+
+export interface PaymentResponse {
+  success: boolean;
+  count?: number;
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  payments?: Payment[];
+  message?: string;
+  error?: string;
 }

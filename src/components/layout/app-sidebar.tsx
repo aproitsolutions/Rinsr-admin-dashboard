@@ -138,7 +138,15 @@ export default function AppSidebar() {
                         tooltip={item.title}
                         isActive={pathname === item.url}
                       >
-                        {item.icon && <Icon />}
+                        {item.icon && (
+                          <Icon
+                            className={
+                              item.icon === 'bot'
+                                ? 'text-purple-600 dark:text-purple-400'
+                                : ''
+                            }
+                          />
+                        )}
                         <span>{item.title}</span>
                         <IconChevronRight className='ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90' />
                       </SidebarMenuButton>
@@ -172,7 +180,13 @@ export default function AppSidebar() {
                       href={item.url}
                       className='relative flex items-center'
                     >
-                      <Icon />
+                      <Icon
+                        className={
+                          item.icon === 'bot'
+                            ? 'text-purple-600 dark:text-purple-400'
+                            : ''
+                        }
+                      />
                       <span>{item.title}</span>
                       {item.title === 'Vendor Orders' &&
                         unreadDispatchCount > 0 && (

@@ -20,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
-import { getOrders } from '@/lib/api/orders';
+import { getNewOrders } from '@/lib/api/orders';
 import { Order } from '@/constants/data';
 import { Input } from '@/components/ui/input';
 import {
@@ -51,7 +51,7 @@ interface OrdersPageProps {
 import { Checkbox } from '@/components/ui/checkbox';
 import { useUser } from '@/components/layout/user-provider';
 
-export default function OrdersPage({ className }: OrdersPageProps) {
+export default function NewOrdersPage({ className }: OrdersPageProps) {
   const { admin } = useUser();
   const [orders, setOrders] = useState<Order[]>([]);
   const [search, setSearch] = useState('');
@@ -121,7 +121,8 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     async function fetchOrders() {
       setLoading(true);
       try {
-        const response = await getOrders({
+        console.log('🚀 Fetching new orders in frontend...');
+        const response = await getNewOrders({
           page: pageIndex,
           limit: perPage,
           user_status: userStatusFilter === 'all' ? '' : userStatusFilter,
@@ -129,11 +130,15 @@ export default function OrdersPage({ className }: OrdersPageProps) {
           hub_id: admin?.role === 'hub_user' ? admin.hub_id : undefined
         });
 
+        console.log('✅ Frontend API Response:', response);
+
         if (response.success && Array.isArray(response.data)) {
+          console.log(`📊 Loaded ${response.data.length} orders to state.`);
           setOrders(response.data);
           setTotalOrders(response.total || 0);
           setSelectedOrderIds(new Set());
         } else {
+          console.warn('⚠️ API success false or data not array:', response);
           setOrders([]);
           setTotalOrders(0);
           setSelectedOrderIds(new Set());
@@ -162,7 +167,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
       return;
     }
 
-    const vendorId = selectedVendorForAssign; // define local var for logging/logic
+    const vendorId = selectedVendorForAssign;
 
     console.log(
       `📦 Bulk Assigning ${selectedIds.length} orders to vendor ${vendorId}`,
@@ -258,7 +263,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
     displayedOrders.length > 0 &&
     selectedOrderIds.size === displayedOrders.length;
   const isIndeterminate =
-    selectedOrderIds.size > 0 && selectedOrderIds.size < displayedOrders.length; // primitive Checkbox might not support indeterminate via prop directly easily without ref, skipping for now logic-wise
+    selectedOrderIds.size > 0 && selectedOrderIds.size < displayedOrders.length;
 
   // Add Weight Handlers
   const openWeightDialog = (orderId: string) => {
@@ -330,7 +335,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
       <div className='flex flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
         <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
-          <h1 className='text-foreground text-2xl font-bold'>Orders</h1>
+          <h1 className='text-foreground text-2xl font-bold'>New Orders</h1>
 
           <div className='flex flex-col gap-2 text-sm sm:flex-row sm:items-center'>
             {/* Service Filter */}
