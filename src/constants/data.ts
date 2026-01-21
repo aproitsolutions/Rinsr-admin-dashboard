@@ -164,9 +164,19 @@ export const navItems: NavItem[] = [
     title: 'Customers',
     url: '/dashboard/users',
     icon: 'users',
-    isActive: false,
-    shortcut: ['d', 'd'],
-    items: []
+    isActive: true,
+    items: [
+      {
+        title: 'All Customers',
+        url: '/dashboard/users',
+        icon: 'users'
+      },
+      {
+        title: 'Complaints',
+        url: '/dashboard/complaints',
+        icon: 'warning'
+      }
+    ]
   },
   {
     title: 'Services',

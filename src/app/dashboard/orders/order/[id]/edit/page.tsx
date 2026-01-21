@@ -396,29 +396,35 @@ export default function EditOrderPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value='scheduled'>Scheduled</SelectItem>
-                        <SelectItem value='picked_up'>Picked Up</SelectItem>
-                        <SelectItem value='processing'>Processing</SelectItem>
-                        <SelectItem value='ready_to_pickup_from_hub'>
-                          Ready to Pickup from Hub
+                        <SelectItem value='scheduled'>
+                          Pickup Scheduled
+                        </SelectItem>
+                        <SelectItem value='picked_up'>
+                          In Transit to Hub
+                        </SelectItem>
+                        <SelectItem value='processing'>
+                          At Hub (Sorting)
                         </SelectItem>
                         <SelectItem value='vendor_picked_up'>
-                          Vendor Picked Up
+                          Sent to Laundry Partner
                         </SelectItem>
-                        <SelectItem value='vendor_returning'>
-                          Vendor Returning
+                        <SelectItem value='washing'>
+                          Washing / Processing
                         </SelectItem>
+                        <SelectItem value='service_completed'>
+                          Returned to Hub (QC + Packing)
+                        </SelectItem>
+
                         <SelectItem value='ready'>Ready to deliver</SelectItem>
 
                         <SelectItem value='out_for_delivery'>
                           Out for Delivery
                         </SelectItem>
-                        <SelectItem value='service_completed'>
-                          Service Completed
-                        </SelectItem>
-                        <SelectItem value='washing'>Washing</SelectItem>
+
                         <SelectItem value='delivered'>Delivered</SelectItem>
-                        <SelectItem value='cancelled'>Cancelled</SelectItem>
+                        <SelectItem value='cancelled'>
+                          Cancelled / Failed
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

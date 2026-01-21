@@ -124,7 +124,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
         const response = await getOrders({
           page: pageIndex,
           limit: perPage,
-          user_status: userStatusFilter === 'all' ? '' : userStatusFilter,
+          status: userStatusFilter === 'all' ? '' : userStatusFilter,
           search,
           hub_id: admin?.role === 'hub_user' ? admin.hub_id : undefined
         });
@@ -327,7 +327,7 @@ export default function OrdersPage({ className }: OrdersPageProps) {
   // ...
   return (
     <PageContainer scrollable={true}>
-      <div className='flex flex-1 flex-col space-y-4 p-6'>
+      <div className='flex min-w-0 flex-1 flex-col space-y-4 p-6'>
         {/* Header */}
         <div className='flex flex-col gap-4 md:flex-row md:items-center md:justify-between'>
           <h1 className='text-foreground text-2xl font-bold'>Orders</h1>
@@ -366,17 +366,23 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 <SelectValue placeholder='Filter Status' />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='all'>All User Statuses</SelectItem>
-                <SelectItem value='processing'>Processing</SelectItem>
-                <SelectItem value='washing_completed'>
-                  Washing Completed
+                <SelectItem value='all'>All Statuses</SelectItem>
+                <SelectItem value='scheduled'>Pickup Scheduled</SelectItem>
+                <SelectItem value='picked_up'>In Transit to Hub</SelectItem>
+                <SelectItem value='processing'>At Hub (Sorting)</SelectItem>
+                <SelectItem value='vendor_picked_up'>
+                  Sent to Laundry Partner
                 </SelectItem>
-                <SelectItem value='preparing for dispatch'>
-                  Preparing for Dispatch
+                <SelectItem value='washing'>Washing / Processing</SelectItem>
+                <SelectItem value='service_completed'>
+                  Returned to Hub (QC + Packing)
                 </SelectItem>
-                <SelectItem value='out for delivery'>
+                <SelectItem value='ready'>Ready to deliver</SelectItem>
+                <SelectItem value='out_for_delivery'>
                   Out for Delivery
                 </SelectItem>
+                <SelectItem value='delivered'>Delivered</SelectItem>
+                <SelectItem value='cancelled'>Cancelled / Failed</SelectItem>
               </SelectContent>
             </Select>
 
@@ -446,9 +452,9 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                 <TableHead className='text-foreground/80'>
                   Order Status
                 </TableHead>
-                <TableHead className='text-foreground/80'>
+                {/* <TableHead className='text-foreground/80'>
                   User Status
-                </TableHead>
+                </TableHead> */}
                 <TableHead className='text-foreground/80'>Emergency</TableHead>
                 {admin?.role !== 'hub_user' && (
                   <TableHead className='text-foreground/80'>Hub</TableHead>
@@ -527,14 +533,20 @@ export default function OrdersPage({ className }: OrdersPageProps) {
                       </TableCell>
 
                       <TableCell>{order.vendor_status || '—'}</TableCell>
-                      <TableCell>{order.address_line || '—'}</TableCell>
+                      <TableCell title={order.address_line || ''}>
+                        {order.address_line
+                          ? order.address_line.length > 25
+                            ? `${order.address_line.substring(0, 25)}...`
+                            : order.address_line
+                          : '—'}
+                      </TableCell>
                       <TableCell>
                         {typeof order.delivery_date === 'string'
                           ? order.delivery_date
                           : '—'}
                       </TableCell>
                       <TableCell>{order.status || '—'}</TableCell>
-                      <TableCell>{order.user_status || '—'}</TableCell>
+                      {/* <TableCell>{order.user_status || '—'}</TableCell> */}
                       <TableCell>
                         <span
                           className={`font-semibold ${order.emergency ? 'text-red-600' : ''}`}

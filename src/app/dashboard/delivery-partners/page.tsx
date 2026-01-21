@@ -209,16 +209,17 @@ export default function DeliveryPartnersPage() {
                     <TableCell className='pr-6 text-right'>
                       <div className='flex justify-end gap-2'>
                         <Link
-                          href={`/dashboard/delivery-partners/${partner._id}/edit`}
+                          href={`/dashboard/delivery-partners/${partner._id}`}
                         >
                           <Button
                             variant='outline'
                             size='sm'
                             className='cursor-pointer'
                           >
-                            <IconPencil className='mr-2 h-4 w-4' /> Edit
+                            View
                           </Button>
                         </Link>
+
                         <Button
                           variant='destructive'
                           size='sm'

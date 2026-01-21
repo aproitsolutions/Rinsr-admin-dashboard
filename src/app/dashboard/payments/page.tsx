@@ -227,9 +227,11 @@ export default function PaymentsPage() {
                 payments.map((payment) => {
                   const order = payment.order_id;
                   const orderId =
-                    typeof order === 'object' ? order._id || order.id : '—';
+                    order && typeof order === 'object'
+                      ? order._id || order.id
+                      : '—';
                   const userName =
-                    typeof order === 'object' && order.user_id
+                    order && typeof order === 'object' && order.user_id
                       ? typeof order.user_id === 'object' &&
                         'name' in order.user_id
                         ? order.user_id.name
@@ -239,14 +241,18 @@ export default function PaymentsPage() {
                       : '—';
 
                   const amount =
-                    typeof order === 'object' ? order.total_price : '—';
+                    order && typeof order === 'object'
+                      ? order.total_price
+                      : '—';
                   const orderStatus =
-                    typeof order === 'object' ? order.status : '—';
+                    order && typeof order === 'object' ? order.status : '—';
 
                   // Get exact payment status from API - check payment object first, then order
                   const paymentStatus =
                     payment.status ||
-                    (typeof order === 'object' ? order.payment_status : null) ||
+                    (order && typeof order === 'object'
+                      ? order.payment_status
+                      : null) ||
                     '—';
 
                   // Determine badge color based on status

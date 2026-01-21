@@ -39,6 +39,8 @@ interface User {
   phone?: string;
   role?: string;
   is_active?: boolean;
+  is_subscribed?: boolean;
+  plan_name?: string;
   createdAt?: string;
 }
 
@@ -52,6 +54,8 @@ export default function UsersPage() {
 
   const [pageIndex, setPageIndex] = useState(1);
   const [perPage, setPerPage] = useState(10);
+
+  const [totalUsers, setTotalUsers] = useState(0);
 
   // 🔹 Fetch customers report
   useEffect(() => {
@@ -69,41 +73,51 @@ export default function UsersPage() {
     fetchReport();
   }, []);
 
-  // 🔹 Fetch all users
+  // 🔹 Fetch users with Server-Side Pagination
   useEffect(() => {
     async function fetchUsers() {
       setLoading(true);
       try {
-        const res = await fetch('/api/users', { cache: 'no-store' });
+        const params = new URLSearchParams({
+          page: pageIndex.toString(),
+          limit: perPage.toString(),
+          search: search
+        });
+
+        const res = await fetch(`/api/users?${params.toString()}`, {
+          cache: 'no-store'
+        });
         const data = await res.json();
-        setUsers(data.success && Array.isArray(data.users) ? data.users : []);
+
+        if (data.users) {
+          setUsers(data.users);
+          setTotalUsers(data.total || 0);
+        } else if (data.success && Array.isArray(data.data)) {
+          // Fallback if structure is different
+          setUsers(data.data);
+          setTotalUsers(data.total || 0);
+        } else {
+          setUsers([]);
+          setTotalUsers(0);
+        }
       } catch (err) {
         console.error('Error fetching users:', err);
         setUsers([]);
+        setTotalUsers(0);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchUsers();
-  }, []);
+    // Debounce search optional, but for now simple effect
+    const timeoutId = setTimeout(() => {
+      fetchUsers();
+    }, 500); // 500ms debounce for search
 
-  // 🔍 Filter + Pagination
-  const filteredUsers = useMemo(() => {
-    if (!search.trim()) return users;
-    return users.filter(
-      (u) =>
-        u.name?.toLowerCase().includes(search.toLowerCase()) ||
-        u.email?.toLowerCase().includes(search.toLowerCase()) ||
-        u.phone?.includes(search)
-    );
-  }, [users, search]);
+    return () => clearTimeout(timeoutId);
+  }, [pageIndex, perPage, search]);
 
-  const total = filteredUsers.length;
-  const start = (pageIndex - 1) * perPage;
-  const end = start + perPage;
-  const displayedUsers = filteredUsers.slice(start, end);
-  const pageCount = Math.max(1, Math.ceil(total / perPage));
+  const pageCount = Math.max(1, Math.ceil(totalUsers / perPage));
 
   return (
     <PageContainer scrollable={true}>
@@ -180,6 +194,8 @@ export default function UsersPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Subscribed</TableHead>
+                <TableHead>Plan Name</TableHead>
                 <TableHead className='pr-6 text-right'>Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -194,8 +210,8 @@ export default function UsersPage() {
                     ))}
                   </TableRow>
                 ))
-              ) : displayedUsers.length > 0 ? (
-                displayedUsers.map((user, idx) => (
+              ) : users.length > 0 ? (
+                users.map((user, idx) => (
                   <TableRow
                     key={user._id}
                     className={cn(
@@ -207,10 +223,22 @@ export default function UsersPage() {
                     <TableCell>{user.email}</TableCell>
                     <TableCell>{user.phone || '—'}</TableCell>
                     <TableCell>{user.role || 'User'}</TableCell>
+                    <TableCell>
+                      {user.is_subscribed ? (
+                        <span className='rounded bg-green-100 px-2 py-1 text-xs font-semibold text-green-800 dark:bg-green-900/30 dark:text-green-400'>
+                          Yes
+                        </span>
+                      ) : (
+                        <span className='text-muted-foreground text-sm'>
+                          No
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>{user.plan_name || '—'}</TableCell>
                     <TableCell className='pr-6 text-right'>
                       <Link href={`/dashboard/users/${user._id}/edit`}>
                         <Button variant='outline' size='sm'>
-                          <Pencil className='mr-2 h-4 w-4' /> Edit
+                          <Pencil className='mr-2 h-4 w-4' /> View
                         </Button>
                       </Link>
                     </TableCell>
@@ -228,6 +256,85 @@ export default function UsersPage() {
               )}
             </TableBody>
           </Table>
+        </div>
+        {/* Pagination */}
+        <div className='border-border bg-card text-foreground border-t p-3'>
+          <div className='flex w-full flex-wrap items-center justify-between gap-4 sm:gap-8'>
+            <div className='text-muted-foreground text-sm'>
+              {totalUsers} total users found.
+            </div>
+
+            <div className='flex items-center gap-4 sm:gap-6 lg:gap-8'>
+              <div className='flex items-center space-x-2'>
+                <p className='text-sm font-medium whitespace-nowrap'>
+                  Rows per page
+                </p>
+                <Select
+                  value={`${perPage}`}
+                  onValueChange={(value) => {
+                    setPageIndex(1);
+                    setPerPage(Number(value));
+                  }}
+                >
+                  <SelectTrigger className='border-input bg-background text-foreground h-8 w-[4.5rem] border'>
+                    <SelectValue placeholder={perPage} />
+                  </SelectTrigger>
+                  <SelectContent side='top' className='bg-card text-foreground'>
+                    {[10, 20, 30, 40, 50].map((n) => (
+                      <SelectItem key={n} value={`${n}`}>
+                        {n}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className='text-sm font-medium'>
+                Page {pageIndex} of {pageCount}
+              </div>
+
+              <div className='flex items-center space-x-2'>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex(1)}
+                  disabled={pageIndex <= 1}
+                  className='hidden size-8 lg:flex'
+                >
+                  «
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex((p) => Math.max(1, p - 1))}
+                  disabled={pageIndex <= 1}
+                  className='size-8'
+                >
+                  ‹
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() =>
+                    setPageIndex((p) => Math.min(pageCount, p + 1))
+                  }
+                  disabled={pageIndex >= pageCount}
+                  className='size-8'
+                >
+                  ›
+                </Button>
+                <Button
+                  variant='outline'
+                  size='icon'
+                  onClick={() => setPageIndex(pageCount)}
+                  disabled={pageIndex >= pageCount}
+                  className='hidden size-8 lg:flex'
+                >
+                  »
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </PageContainer>

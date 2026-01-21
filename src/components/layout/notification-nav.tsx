@@ -52,9 +52,11 @@ export function NotificationNav() {
     };
     socket.on('vendor_order_dispatched', handleRefresh);
     socket.on('vendor_order_declined', handleRefresh);
+    socket.on('new_complaint', handleRefresh);
     return () => {
       socket.off('vendor_order_dispatched', handleRefresh);
       socket.off('vendor_order_declined', handleRefresh);
+      socket.off('new_complaint', handleRefresh);
     };
   }, [socket]);
 
@@ -72,7 +74,8 @@ export function NotificationNav() {
           (n) =>
             n.status === 'unread' &&
             (n.type === 'VENDOR_ORDER_DISPATCHED' ||
-              n.type === 'VENDOR_ORDER_DECLINED')
+              n.type === 'VENDOR_ORDER_DECLINED' ||
+              n.type === 'NEW_COMPLAINT')
         );
         setNotifications(unreadOnes);
         setUnreadCount(unreadOnes.length);
@@ -84,8 +87,13 @@ export function NotificationNav() {
     }
   };
 
-  const handleView = (vendorOrderId: string) => {
-    router.push(`/dashboard/vendor-orders/${vendorOrderId}`);
+  const handleView = (groupKey: string, type?: string) => {
+    if (type === 'NEW_COMPLAINT') {
+      router.push('/dashboard/complaints');
+    } else {
+      // For vendor orders, groupKey is vendorOrderId
+      router.push(`/dashboard/vendor-orders/${groupKey}`);
+    }
   };
 
   const handleMarkGroupAsRead = async (
@@ -183,7 +191,9 @@ export function NotificationNav() {
                         <p className='text-sm leading-none font-medium'>
                           {groupId === 'others'
                             ? latest.title
-                            : `Order #${groupId.slice(-6)}`}
+                            : latest.type === 'NEW_COMPLAINT'
+                              ? 'New Complaint'
+                              : `Order #${groupId.slice(-6)}`}
                         </p>
                         {count > 1 && (
                           <span className='bg-primary/10 text-primary rounded-full px-2 py-0.5 text-[10px] font-medium'>
@@ -206,9 +216,11 @@ export function NotificationNav() {
                           variant='outline'
                           size='sm'
                           className='h-7 flex-1 text-xs'
-                          onClick={() => handleView(groupId)}
+                          onClick={() => handleView(groupId, latest.type)}
                         >
-                          View Order
+                          {latest.type === 'NEW_COMPLAINT'
+                            ? 'View Complaint'
+                            : 'View Order'}
                         </Button>
                       )}
                       <Button

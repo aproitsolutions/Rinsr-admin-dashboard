@@ -22,13 +22,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Extract query params
+    const { searchParams } = new URL(request.url);
+    const page = searchParams.get('page');
+    const limit = searchParams.get('limit');
+    const search = searchParams.get('search');
+
     const normalizedBase = baseUrl.endsWith('/api')
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    console.log('📡 Fetching all users from:', `${normalizedBase}/users`);
+    // Construct upstream URL with params
+    const upstreamUrl = new URL(`${normalizedBase}/users`);
+    if (page) upstreamUrl.searchParams.set('page', page);
+    if (limit) upstreamUrl.searchParams.set('limit', limit);
+    if (search) upstreamUrl.searchParams.set('search', search);
 
-    const upstreamRes = await fetch(`${normalizedBase}/users`, {
+    // console.log('📡 Fetching all users from:', upstreamUrl.toString());
+
+    const upstreamRes = await fetch(upstreamUrl.toString(), {
       method: 'GET',
       headers: {
         Authorization: `Bearer ${token}`,
@@ -56,6 +68,8 @@ export async function GET(request: NextRequest) {
         success: true,
         message: 'Users fetched successfully',
         users: data?.users || data,
+        total:
+          data?.total ?? (Array.isArray(data?.users) ? data.users.length : 0),
         count:
           data?.count ?? (Array.isArray(data?.users) ? data.users.length : 0)
       },
@@ -95,8 +109,6 @@ export async function POST(request: NextRequest) {
 
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const finalUrl = `${normalizedBase}/users`;
-
-    console.log('📡 Creating new user at:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
       method: 'POST',
