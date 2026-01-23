@@ -35,7 +35,7 @@ interface Vendor {
   location: string;
   coordinates?: { lat: number; lng: number };
   phoneNumber: string;
-  services: string[];
+  services: any[];
   createdAt?: string;
 }
 
@@ -165,17 +165,19 @@ export default function VendorsPage() {
                     <TableCell>{vendor.phoneNumber}</TableCell>
                     <TableCell>
                       {vendor.services?.length > 0
-                        ? vendor.services.join(', ')
+                        ? vendor.services
+                            .map((s: any) => s.name || s)
+                            .join(', ')
                         : '—'}
                     </TableCell>
                     <TableCell className='flex justify-end gap-2 pr-6'>
-                      <Link href={`/dashboard/vendors/${vendor._id}/edit`}>
+                      <Link href={`/dashboard/vendors/${vendor._id}`}>
                         <Button
                           variant='outline'
                           size='sm'
                           className='cursor-pointer'
                         >
-                          <IconPencil className='mr-2 h-4 w-4' /> Edit
+                          <IconPencil className='mr-2 h-4 w-4' /> View
                         </Button>
                       </Link>
 

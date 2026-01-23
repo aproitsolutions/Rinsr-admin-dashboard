@@ -117,6 +117,66 @@ export async function PUT(
 }
 
 /* ============================================================
+   UPDATE VENDOR PAYMENT STATUS (PATCH)
+============================================================ */
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const finalUrl = `${BASE_URL.replace(/\/+$/, '')}/vendors/${id}/payment-status`;
+
+  console.log('💰 Updating vendor payment status at:', finalUrl);
+
+  try {
+    const body = await req.json();
+
+    const res = await fetch(finalUrl, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    const text = await res.text();
+    let data;
+
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.error('❌ Non-JSON response:', text.slice(0, 200));
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Backend returned non-JSON response',
+          raw: text.slice(0, 200)
+        },
+        { status: 502 }
+      );
+    }
+
+    if (!res.ok) {
+      console.error('❌ Update failed:', data);
+      return NextResponse.json(
+        { success: false, message: 'Vendor payment update failed', data },
+        { status: res.status }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: 'Vendor payment status updated successfully',
+      vendor: data.vendor || data
+    });
+  } catch (err) {
+    console.error('❌ Vendor payment update error:', err);
+    return NextResponse.json(
+      { success: false, message: 'Failed to update vendor payment status' },
+      { status: 500 }
+    );
+  }
+}
+
+/* ============================================================
    DELETE VENDOR
 ============================================================ */
 export async function DELETE(
