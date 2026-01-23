@@ -51,6 +51,7 @@ const planSchema = z.object({
     })
   ),
   extra_kg_rate: z.coerce.number().min(0, 'Extra rate required'),
+  extra_pickup_amount: z.coerce.number().min(0).default(0),
   rollover_limit_months: z.coerce.number().min(0),
   is_active: z.boolean().default(true)
 });
@@ -79,6 +80,7 @@ export default function CreatePlanPage() {
       features: [],
       services: [],
       extra_kg_rate: 50,
+      extra_pickup_amount: 0,
       rollover_limit_months: 1,
       is_active: true
     }
@@ -349,19 +351,43 @@ export default function CreatePlanPage() {
               </div>
             </div>
 
-            {/* Extra KG Rate */}
-            <FormField
-              control={form.control}
-              name='extra_kg_rate'
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Extra KG Rate (₹)</FormLabel>
-                  <FormControl>
-                    <Input type='number' {...field} />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {/* Extra KG Rate and Extra Pickup Amount */}
+            <div className='grid grid-cols-2 gap-4'>
+              <FormField
+                control={form.control}
+                name='extra_kg_rate'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extra KG Rate (₹)</FormLabel>
+                    <FormControl>
+                      <Input type='number' {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='extra_pickup_amount'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extra Pickup Amount (₹)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={0}
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          field.onChange(val === '' ? '' : Number(val));
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             {/* Rollover and Active */}
             <div className='grid grid-cols-2 gap-4'>

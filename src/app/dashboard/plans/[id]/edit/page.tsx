@@ -52,6 +52,7 @@ const planSchema = z.object({
     })
   ),
   extra_kg_rate: z.coerce.number().min(0, 'Extra rate required'),
+  extra_pickup_amount: z.coerce.number().min(0).default(0),
   rollover_limit_months: z.coerce.number().min(0),
   is_active: z.boolean().default(true)
 });
@@ -83,6 +84,7 @@ export default function EditPlanPage() {
       features: [],
       services: [],
       extra_kg_rate: 50,
+      extra_pickup_amount: 0,
       rollover_limit_months: 1,
       is_active: true
     }
@@ -98,22 +100,23 @@ export default function EditPlanPage() {
         if (data.success && data.plan) {
           const plan = data.plan;
           form.reset({
-            name: plan.name,
+            name: plan.name || '',
             description: plan.description || '',
-            price: plan.price,
+            price: plan.price || 0,
             currency: plan.currency || 'INR',
-            validity_days: plan.validity_days,
-            weight_limit_kg: plan.weight_limit_kg,
-            pickups_per_month: plan.pickups_per_month,
+            validity_days: plan.validity_days || 0,
+            weight_limit_kg: plan.weight_limit_kg || 0,
+            pickups_per_month: plan.pickups_per_month || 0,
             features: plan.features || [],
             services:
               plan.services?.map((s: any) => ({
                 serviceId: s.serviceId || s._id,
                 name: s.name
               })) || [],
-            extra_kg_rate: plan.extra_kg_rate,
-            rollover_limit_months: plan.rollover_limit_months,
-            is_active: plan.is_active
+            extra_kg_rate: plan.extra_kg_rate || 0,
+            extra_pickup_amount: plan.extra_pickup_amount || 0,
+            rollover_limit_months: plan.rollover_limit_months || 0,
+            is_active: plan.is_active ?? true
           });
         } else {
           setAlert({ message: 'Plan not found.', success: false });
@@ -124,7 +127,8 @@ export default function EditPlanPage() {
       }
     }
     fetchPlan();
-  }, [planId, form]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [planId]);
 
   // 🧠 Fetch services for checkbox list
   useEffect(() => {
@@ -307,6 +311,48 @@ export default function EditPlanPage() {
               />
             </div>
 
+            {/* Duration, Weight Limit, Pickups */}
+            <div className='grid grid-cols-3 gap-4'>
+              <FormField
+                control={form.control}
+                name='validity_days'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Validity (Days)</FormLabel>
+                    <FormControl>
+                      <Input type='number' {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='weight_limit_kg'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Weight Limit (kg)</FormLabel>
+                    <FormControl>
+                      <Input type='number' {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name='pickups_per_month'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Pickups per Month</FormLabel>
+                    <FormControl>
+                      <Input type='number' {...field} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
             {/* Services */}
             <div className='space-y-2'>
               <Label>Services Included</Label>
@@ -360,6 +406,30 @@ export default function EditPlanPage() {
               />
               <FormField
                 control={form.control}
+                name='extra_pickup_amount'
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Extra Pickup Amount (₹)</FormLabel>
+                    <FormControl>
+                      <Input
+                        type='number'
+                        min={0}
+                        {...field}
+                        value={field.value ?? ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          field.onChange(val === '' ? '' : Number(val));
+                        }}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className='grid grid-cols-2 gap-4'>
+              <FormField
+                control={form.control}
                 name='rollover_limit_months'
                 render={({ field }) => (
                   <FormItem>
@@ -370,23 +440,23 @@ export default function EditPlanPage() {
                   </FormItem>
                 )}
               />
-            </div>
 
-            <FormField
-              control={form.control}
-              name='is_active'
-              render={({ field }) => (
-                <FormItem className='flex items-center justify-between rounded-md border p-3'>
-                  <FormLabel>Active</FormLabel>
-                  <FormControl>
-                    <Switch
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+              <FormField
+                control={form.control}
+                name='is_active'
+                render={({ field }) => (
+                  <FormItem className='flex items-center justify-between rounded-md border p-3'>
+                    <FormLabel>Active</FormLabel>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
 
             <div className='flex justify-end gap-3'>
               <Button type='submit' disabled={loading}>
