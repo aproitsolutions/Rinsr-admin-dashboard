@@ -39,9 +39,29 @@ export async function GET(req: NextRequest) {
       cache: 'no-store'
     });
 
-    const data = await upstreamRes.json();
+    const textData = await upstreamRes.text();
+    let data;
+
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      console.error('❌ Failed to parse upstream JSON:', e);
+      console.error('📄 Raw Response:', textData);
+      return NextResponse.json(
+        {
+          success: false,
+          message: 'Invalid JSON response from upstream',
+          rawResponse: textData
+        },
+        { status: 502 } // Bad Gateway
+      );
+    }
 
     if (!upstreamRes.ok) {
+      console.error(
+        `❌ Upstream Error (${upstreamRes.status}):`,
+        JSON.stringify(data, null, 2)
+      );
       return NextResponse.json(
         {
           success: false,

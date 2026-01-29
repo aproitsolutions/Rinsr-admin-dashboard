@@ -130,7 +130,7 @@ export default function NewOrdersPage({ className }: OrdersPageProps) {
           hub_id: admin?.role === 'hub_user' ? admin.hub_id : undefined
         });
 
-        console.log('✅ Frontend API Response:', response);
+        console.log('  Frontend API Response:', response);
 
         if (response.success && Array.isArray(response.data)) {
           console.log(`📊 Loaded ${response.data.length} orders to state.`);
@@ -189,7 +189,7 @@ export default function NewOrdersPage({ className }: OrdersPageProps) {
 
       if (response.ok && data.success) {
         setAlertMessage(
-          `✅ Successfully assigned ${selectedIds.length} orders to vendor!`
+          `  Successfully assigned ${selectedIds.length} orders to vendor!`
         );
         setSelectedVendorForAssign(null); // Reset selection
         setSelectedOrderIds(new Set()); // Clear checkboxes
@@ -288,7 +288,7 @@ export default function NewOrdersPage({ className }: OrdersPageProps) {
       const data = await response.json();
 
       if (data.success) {
-        setAlertMessage('✅ Weight updated successfully!');
+        setAlertMessage('  Weight updated successfully!');
         setWeightDialogOpen(false);
       } else {
         setAlertMessage(`⚠️ ${data.message || 'Failed to update weight'}`);
@@ -318,7 +318,7 @@ export default function NewOrdersPage({ className }: OrdersPageProps) {
             order.id === orderId ? { ...order, status: 'cancelled' } : order
           )
         );
-        setAlertMessage('✅ Order cancelled successfully!');
+        setAlertMessage('  Order cancelled successfully!');
       } else {
         setAlertMessage(`⚠️ ${data.message || 'Failed to cancel the order'}`);
       }
@@ -749,7 +749,7 @@ export default function NewOrdersPage({ className }: OrdersPageProps) {
           </div>
         </div>
 
-        {/* ✅ Alert Dialog for messages */}
+        {/*   Alert Dialog for messages */}
         {alertMessage && (
           <AlertDialog
             open={!!alertMessage}

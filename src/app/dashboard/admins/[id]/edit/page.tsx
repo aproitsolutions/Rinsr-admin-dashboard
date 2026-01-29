@@ -33,7 +33,7 @@ import {
   AlertDialogAction
 } from '@/components/ui/alert-dialog';
 
-// ✅ Zod schema
+//   Zod schema
 const adminSchema = z
   .object({
     name: z.string().min(1, 'Name is required'),
@@ -282,12 +282,12 @@ export default function EditAdminPage() {
         </Form>
       </div>
 
-      {/* ✅ Alert Dialog */}
+      {/*   Alert Dialog */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isSuccess ? '✅ Success' : '❌ Error'}
+              {isSuccess ? '  Success' : '❌ Error'}
             </AlertDialogTitle>
             <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
           </AlertDialogHeader>

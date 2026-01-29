@@ -113,7 +113,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // ✅ Normalize orders for UI
+    //   Normalize orders for UI
     const normalized = rawItems.map((item) => {
       const id =
         item._id ?? item.id ?? item.order_id ?? String(item.uuid ?? '');

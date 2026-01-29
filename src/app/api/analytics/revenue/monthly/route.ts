@@ -18,12 +18,10 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
 
-    //   Ensure no duplicate slashes
     const normalizedBase = baseUrl.replace(/\/+$/, '');
-    //   Correct backend path (plural "reports")
-    const finalUrl = `${normalizedBase}/reports/customers`;
+    const finalUrl = `${normalizedBase}/analytics/revenue/monthly`;
 
-    console.log('📡 Fetching subscriptions report from:', finalUrl);
+    console.log('📡 Fetching revenue analytics from:', finalUrl);
 
     const upstream = await fetch(finalUrl, {
       method: 'GET',
@@ -34,31 +32,22 @@ export async function GET(request: NextRequest) {
       cache: 'no-store'
     });
 
-    // Try to parse even if it’s an error response
     const data = await upstream.json().catch(() => ({}));
 
     if (!upstream.ok) {
-      console.error(' Upstream error:', data);
+      console.error('Upstream error:', data);
       return NextResponse.json(
         {
           success: false,
-          message: data.message || 'Failed to fetch subscriptions report'
+          message: data.message || 'Failed to fetch revenue analytics'
         },
         { status: upstream.status }
       );
     }
 
-    // console.log(' Subscriptions report fetched successfully', data);
-    return NextResponse.json(
-      {
-        success: true,
-        message: 'Subscriptions report fetched successfully',
-        data
-      },
-      { status: 200 }
-    );
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
-    console.error(' Proxy /api/subscriptions-report error:', error);
+    console.error('Proxy /api/analytics/revenue/monthly error:', error);
     return NextResponse.json(
       { success: false, message: 'Proxy error', error: String(error) },
       { status: 500 }

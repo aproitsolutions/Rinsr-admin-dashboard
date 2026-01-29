@@ -216,7 +216,7 @@ export default function CreateHubPage() {
       if (result.success) {
         setDialog({
           open: true,
-          title: '✅ Hub Created',
+          title: '  Hub Created',
           message: 'The hub has been created successfully.',
           success: true
         });

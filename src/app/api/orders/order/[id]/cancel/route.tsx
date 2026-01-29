@@ -5,7 +5,7 @@ export async function PATCH(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // ✅ Must await before accessing
+  //   Must await before accessing
   const orderId = params.id;
 
   console.log(`🟢 PATCH /api/orders/order/${orderId}/cancel`);

@@ -122,7 +122,7 @@ export default function UsersPage() {
   return (
     <PageContainer scrollable={true}>
       <div className='flex flex-1 flex-col space-y-6 p-6'>
-        {/* ✅ Customer Stats Section */}
+        {/*   Customer Stats Section */}
         <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4'>
           <Card>
             <CardHeader>

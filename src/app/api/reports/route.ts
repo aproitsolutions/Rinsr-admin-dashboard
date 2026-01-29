@@ -18,13 +18,13 @@ export async function GET(request: NextRequest) {
         { status: 401 }
       );
 
-    // ✅ Normalize the backend base URL to prevent double `/api/api`
+    //   Normalize the backend base URL to prevent double `/api/api`
     const normalizedBase = baseUrl.replace(/\/+$/, '');
     const finalUrl = `${normalizedBase}/reports`;
 
     console.log('📡 Fetching reports from:', finalUrl);
 
-    // ✅ Forward the request with the Authorization header
+    //   Forward the request with the Authorization header
     const upstream = await fetch(finalUrl, {
       method: 'GET',
       headers: {

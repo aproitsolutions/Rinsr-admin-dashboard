@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ Fetch all users
+//   Fetch all users
 export async function GET(request: NextRequest) {
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -88,7 +88,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ✅ Create a new user
+//   Create a new user
 export async function POST(request: NextRequest) {
   try {
     const baseUrl = process.env.RINSR_API_BASE;

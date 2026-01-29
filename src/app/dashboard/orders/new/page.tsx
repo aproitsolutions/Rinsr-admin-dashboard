@@ -30,7 +30,7 @@ export default function NewOrderPage() {
   const [plans, setPlans] = useState<{ _id: string; name: string }[]>([]);
   const [services, setServices] = useState<{ _id: string; name: string }[]>([]);
 
-  // ✅ AlertDialog state
+  //   AlertDialog state
   const [alertOpen, setAlertOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState('');
   const [isSuccess, setIsSuccess] = useState(false);
@@ -51,7 +51,7 @@ export default function NewOrderPage() {
     status: 'scheduled'
   });
 
-  // ✅ Fetch plans securely via /api/plans
+  //   Fetch plans securely via /api/plans
   useEffect(() => {
     async function fetchPlans() {
       try {
@@ -71,7 +71,7 @@ export default function NewOrderPage() {
     fetchPlans();
   }, []);
 
-  // ✅ Fetch services securely via /api/services
+  //   Fetch services securely via /api/services
   useEffect(() => {
     async function fetchServices() {
       try {
@@ -91,7 +91,7 @@ export default function NewOrderPage() {
     fetchServices();
   }, []);
 
-  // ✅ Handle form submission
+  //   Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -366,12 +366,12 @@ export default function NewOrderPage() {
         </form>
       </div>
 
-      {/* ✅ ShadCN Alert Dialog */}
+      {/*   ShadCN Alert Dialog */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isSuccess ? '✅ Order Created' : '❌ Error'}
+              {isSuccess ? '  Order Created' : '❌ Error'}
             </AlertDialogTitle>
             <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
           </AlertDialogHeader>

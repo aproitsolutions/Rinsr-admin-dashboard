@@ -193,7 +193,7 @@ export default function PlansPage() {
                           : '—'}
                     </TableCell>
 
-                    {/* ✅ Actions Column */}
+                    {/*   Actions Column */}
                     <TableCell className='pr-6 text-right'>
                       <div className='flex items-center justify-end gap-2'>
                         <Link href={`/dashboard/plans/${plan._id}/edit`}>

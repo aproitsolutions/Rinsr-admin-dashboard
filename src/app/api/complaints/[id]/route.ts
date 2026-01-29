@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ Fetch single complaint
+//   Fetch single complaint
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -71,7 +71,7 @@ export async function GET(
   }
 }
 
-// ✅ Update complaint status
+//   Update complaint status
 export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

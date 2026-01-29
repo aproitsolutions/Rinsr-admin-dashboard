@@ -432,11 +432,11 @@ export default function CreatePlanPage() {
           </Form>
         </CardContent>
 
-        {/* ✅ Alert */}
+        {/*   Alert */}
         <AlertDialog open={!!alert} onOpenChange={() => setAlert(null)}>
           <AlertDialogContent>
             <AlertDialogTitle>
-              {alert?.success ? '✅ Success' : '❌ Error'}
+              {alert?.success ? '  Success' : '❌ Error'}
             </AlertDialogTitle>
             <AlertDialogDescription className='pb-4'>
               {alert?.message}

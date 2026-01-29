@@ -306,7 +306,7 @@ export default function EditHubPage() {
       <AlertDialog open={!!alert} onOpenChange={() => setAlert(null)}>
         <AlertDialogContent>
           <AlertDialogTitle>
-            {alert?.success ? '✅ Success' : '❌ Error'}
+            {alert?.success ? '  Success' : '❌ Error'}
           </AlertDialogTitle>
           <AlertDialogDescription className='pb-4'>
             {alert?.message}

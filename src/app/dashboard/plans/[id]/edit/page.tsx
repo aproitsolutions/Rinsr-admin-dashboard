@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import Link from 'next/link';
 
-// ✅ Reuse the same schema
+//   Reuse the same schema
 const planSchema = z.object({
   name: z.string().min(1, 'Plan name is required'),
   description: z.string().optional(),
@@ -469,11 +469,11 @@ export default function EditPlanPage() {
           </Form>
         </CardContent>
 
-        {/* ✅ Alert */}
+        {/*   Alert */}
         <AlertDialog open={!!alert} onOpenChange={() => setAlert(null)}>
           <AlertDialogContent>
             <AlertDialogTitle>
-              {alert?.success ? '✅ Success' : '❌ Error'}
+              {alert?.success ? '  Success' : '❌ Error'}
             </AlertDialogTitle>
             <AlertDialogDescription className='pb-4'>
               {alert?.message}

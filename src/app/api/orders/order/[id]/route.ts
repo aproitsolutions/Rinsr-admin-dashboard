@@ -92,7 +92,7 @@ export async function GET(
         );
 
         if (foundItem) {
-          // console.log('✅ Found order in Fallback List API!');
+          // console.log('  Found order in Fallback List API!');
           // console.log('[DEBUG] Fallback Item Keys:', Object.keys(foundItem));
           // console.log(
           //   '[DEBUG] Fallback Item Weight:',
@@ -139,7 +139,7 @@ export async function GET(
     //   order?.vendor_id || order?.vendor || 'not found'
     // );
 
-    // ✅ Fix image URL
+    //   Fix image URL
     if (order?.image && !order.image.startsWith('http')) {
       const rootUrl = normalizedBase.replace(/\/api$/, '');
       // Ensure no double slashes if image starts with /
@@ -248,7 +248,7 @@ export async function PUT(
 
           if (patchRes.ok) {
             const patchData = await patchRes.json();
-            console.log('✅ Fallback PATCH succeeded!');
+            console.log('  Fallback PATCH succeeded!');
             return NextResponse.json({
               success: true,
               message: 'Order updated successfully (via PATCH)',

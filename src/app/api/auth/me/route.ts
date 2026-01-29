@@ -25,10 +25,10 @@ export async function GET() {
       ? baseUrl
       : `${baseUrl.replace(/\/+$/, '')}/api`;
 
-    console.log(
-      '📡 Fetching current admin from:',
-      `${normalizedBase}/admins/me`
-    );
+    // console.log(
+    //   '📡 Fetching current admin from:',
+    //   `${normalizedBase}/admins/me`
+    // );
 
     const upstreamRes = await fetch(`${normalizedBase}/admins/me`, {
       method: 'GET',
@@ -39,15 +39,24 @@ export async function GET() {
       cache: 'no-store'
     });
 
-    const data = await upstreamRes.json().catch(() => ({}));
+    const textData = await upstreamRes.text();
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      console.error('❌ Me JSON parse failed:', e);
+      console.error('📄 Raw Me Response:', textData);
+      data = {};
+    }
 
     if (!upstreamRes.ok) {
-      console.error('❌ Upstream error:', data);
+      console.error('❌ Upstream Me Error:', textData);
       return NextResponse.json(
         {
           success: false,
           message: data?.message || 'Failed to fetch admin',
-          error: data
+          error: data,
+          raw: textData
         },
         { status: upstreamRes.status }
       );

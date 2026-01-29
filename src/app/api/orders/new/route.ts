@@ -104,7 +104,7 @@ export async function GET(request: NextRequest) {
 
     // console.log(`📦 Extracted ${rawItems.length} items from upstream response`);
 
-    // ✅ Normalize orders for UI
+    //   Normalize orders for UI
     const normalized = rawItems.map((item: any) => {
       const id =
         item._id ?? item.id ?? item.order_id ?? String(item.uuid ?? '');

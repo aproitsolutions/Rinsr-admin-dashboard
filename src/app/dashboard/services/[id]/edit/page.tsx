@@ -104,7 +104,7 @@ export default function EditServicePage() {
           return res.json();
         })
         .then((data) => {
-          console.log('✅ Lottie Data Loaded:', data ? 'Valid Data' : 'Null');
+          console.log('  Lottie Data Loaded:', data ? 'Valid Data' : 'Null');
           setAnimationData(data);
         })
         .catch((err) => console.error('❌ Failed to load Lottie', err));

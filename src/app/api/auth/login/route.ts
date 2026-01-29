@@ -36,11 +36,24 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body)
     });
 
-    const data = await upstream.json().catch(() => ({}));
+    const textData = await upstream.text();
+    let data;
+    try {
+      data = JSON.parse(textData);
+    } catch (e) {
+      // console.error('❌ Login JSON parse failed:', e);
+      // console.error('📄 Raw Login Response:', textData);
+      data = {};
+    }
 
     if (!upstream.ok) {
+      // console.error(`❌ Upstream Login Error (${upstream.status}):`, textData);
       return NextResponse.json(
-        { success: false, message: data?.message || upstream.statusText },
+        {
+          success: false,
+          message: data?.message || upstream.statusText,
+          raw: textData
+        },
         { status: upstream.status }
       );
     }

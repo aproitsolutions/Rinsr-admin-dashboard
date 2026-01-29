@@ -215,7 +215,7 @@ export default function VendorForm() {
       if (result.success) {
         setDialog({
           open: true,
-          title: '✅ Success',
+          title: '  Success',
           message: 'Vendor created successfully!',
           success: true
         });

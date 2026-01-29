@@ -181,7 +181,7 @@ export default function VendorsPage() {
                         </Button>
                       </Link>
 
-                      {/* ✅ Delete with confirmation */}
+                      {/*   Delete with confirmation */}
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

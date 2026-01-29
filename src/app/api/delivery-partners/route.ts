@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ Fetch all delivery partners
+//   Fetch all delivery partners
 export async function GET(request: NextRequest) {
   try {
     const baseUrl = process.env.RINSR_API_BASE;
@@ -93,7 +93,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// ✅ Create a new delivery partner
+//   Create a new delivery partner
 export async function POST(request: NextRequest) {
   try {
     const baseUrl = process.env.RINSR_API_BASE;

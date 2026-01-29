@@ -61,7 +61,7 @@ export default function EditOrderPage() {
     }
   });
 
-  // ✅ Fetch vendors
+  //   Fetch vendors
   useEffect(() => {
     async function fetchVendors() {
       try {
@@ -88,7 +88,7 @@ export default function EditOrderPage() {
     fetchVendors();
   }, []);
 
-  // ✅ Fetch order details
+  //   Fetch order details
   useEffect(() => {
     async function fetchOrder() {
       try {
@@ -104,7 +104,7 @@ export default function EditOrderPage() {
           const pickup_address = order.pickup_address || {};
           const pickup_time_slot = order.pickup_time_slot || {};
           const vendor_status = order.vendor_status || '';
-          // ✅ Helper to convert "08:00 PM" → "20:00"
+          //   Helper to convert "08:00 PM" → "20:00"
           const convertTo24Hr = (time12h: string) => {
             if (!time12h) return '';
             const [time, modifier] = time12h.split(' ');
@@ -178,7 +178,7 @@ export default function EditOrderPage() {
     fetchOrder();
   }, [orderId, form]);
 
-  // ✅ Handle Save
+  //   Handle Save
   async function onSubmit(values: any) {
     setSaving(true);
     try {
@@ -189,7 +189,7 @@ export default function EditOrderPage() {
           end: values.pickup_time_slot_end
         },
         pickup_address: {
-          label: values.address_label || 'Home', // ✅ new field added
+          label: values.address_label || 'Home', //   new field added
           address_line: values.address_line
         },
         heavy_items: values.heavy_items,
@@ -250,7 +250,7 @@ export default function EditOrderPage() {
       <div className='bg-card flex max-w-3xl flex-1 flex-col space-y-6 rounded-lg p-6 shadow'>
         <h1 className='text-foreground text-2xl font-bold'>Edit Order</h1>
 
-        {/* ✅ Display Order Image */}
+        {/*   Display Order Image */}
         {orderImage && (
           <div className='mb-4'>
             <p className='mb-2 text-sm font-medium'>Order Image</p>
@@ -317,7 +317,7 @@ export default function EditOrderPage() {
               />
             </div>
 
-            {/* ✅ Address Label */}
+            {/*   Address Label */}
             <FormField
               control={form.control}
               name='address_label'
@@ -332,7 +332,7 @@ export default function EditOrderPage() {
               )}
             />
 
-            {/* ✅ Address Line */}
+            {/*   Address Line */}
             <FormField
               control={form.control}
               name='address_line'
@@ -500,12 +500,12 @@ export default function EditOrderPage() {
         </Form>
       </div>
 
-      {/* ✅ Alert Dialog */}
+      {/*   Alert Dialog */}
       <AlertDialog open={alertOpen} onOpenChange={setAlertOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {isSuccess ? '✅ Success' : '❌ Error'}
+              {isSuccess ? '  Success' : '❌ Error'}
             </AlertDialogTitle>
             <AlertDialogDescription>{alertMessage}</AlertDialogDescription>
           </AlertDialogHeader>

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ Get, Update, Delete a delivery partner
+//   Get, Update, Delete a delivery partner
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

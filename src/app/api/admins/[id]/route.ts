@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ GET single admin
+//   GET single admin
 export async function GET(req: NextRequest, context: any) {
   const { id } = await context.params;
 
@@ -54,7 +54,7 @@ export async function GET(req: NextRequest, context: any) {
   }
 }
 
-// ✅ PUT update admin
+//   PUT update admin
 export async function PUT(req: NextRequest, context: any) {
   const { id } = await context.params;
 

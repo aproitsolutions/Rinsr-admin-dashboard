@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-// ✅ Fetch all complaints
+//   Fetch all complaints
 export async function GET(request: NextRequest) {
   try {
     const baseUrl = process.env.RINSR_API_BASE;
